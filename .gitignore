@@ -1,7 +1,9 @@
-/dist
-/dist-newstyle
-/tests/dist
-
-cabal.project.local
-.cabal-sandbox/
-cabal.sandbox.config
+/bower_components/
+/node_modules/
+/.pulp-cache/
+/output/
+/generated-docs/
+/.psc-package/
+/.psc*
+/.purs*
+/.psa*

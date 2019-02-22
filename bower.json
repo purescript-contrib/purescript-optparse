@@ -1,6 +1,10 @@
 {
   "name": "optparse-applicative",
   "license": "BSD-3-Clause",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/f-o-a-m/purescript-optparse.git"
+  },
   "ignore": [
     "**/.*",
     "node_modules",

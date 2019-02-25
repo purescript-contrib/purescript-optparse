@@ -88,7 +88,7 @@ sample = Sample
           ( long "quiet"
          <> short 'q'
          <> help "Whether to be quiet" )
-      <*> option auto
+      <*> option int
           ( long "enthusiasm"
          <> help "How enthusiastically to greet"
          <> showDefault
@@ -96,17 +96,18 @@ sample = Sample
          <> metavar "INT" )
 ```
 
-The parser is built using an [applicative] style starting from a
-set of basic combinators. In this example, hello is defined as an
+The parser is built using an applicative style starting from a
+set of basic combinators (you can also check [Applicative Do](#applicative-do)
+section for definition of `sample` using `ado`). In this example, hello is defined as an
 option with a `String` argument, while quiet is a boolean flag
 (called a switch) and enthusiasm gets parsed as an `Int` with help
-of the `Read` type class.
+of the `int :: ReadM Int`.
 
 
 The parser can be used like this:
 
 ```purs
-main :: IO ()
+main :: Effect Unit
 main = greet =<< execParser opts
   where
     opts = info (sample <**> helper)
@@ -114,9 +115,9 @@ main = greet =<< execParser opts
      <> progDesc "Print a greeting for TARGET"
      <> header "hello - a test for purescript-optparse" )
 
-greet :: Sample -> IO ()
+greet :: Sample -> Effect Unit
 greet (Sample h false n) = putStrLn $ "Hello, " ++ h ++ replicate n '!'
-greet _ = return ()
+greet _ = return unit
 ```
 
 The `greet` function is the entry point of the program, while `opts`
@@ -241,9 +242,7 @@ parallel, and can not depend on the output of other options.
 
 Note, however, that the order of sequencing is still somewhat
 significant, in that it affects the generated help text. Customisation
-can be achieved easily through a lambda abstraction, with [Arrow
-notation](#arrow-interface), or by taking advantage of GHC 8's
-[ApplicativeDo](#applicative-do) extension.
+can be achieved easily by using [ApplicativeDo](#applicative-do).
 
 ### Alternative
 
@@ -259,7 +258,7 @@ data Input
   = FileInput FilePath
   | StdInput
 
-run :: Input -> IO ()
+run :: Input -> Effect Unit
 run = ...
 ```
 
@@ -320,14 +319,14 @@ opts = info (sample <**> helper)
 ```
 
 The `helper` parser that we added after `opts` just creates a dummy
-`--help` option that displays the help text.  Besides that, we just
+`--help` option that displays the help text. Besides that, we just
 set some of the fields of the `ParserInfo` structure with meaningful
-values.  Now that we have a `ParserInfo`, we can finally run the
-parser.  The simplest way to do so is to simply call the `execParser`
+values. Now that we have a `ParserInfo`, we can finally run the
+parser. The simplest way to do so is to simply call the `execParser`
 function in your `main`:
 
 ```purs
-main :: IO ()
+main :: Effect Unit
 main = do
   options <- execParser opts
   ...
@@ -356,9 +355,6 @@ values for properties or adding features.
 Builders work by building the option from scratch, and eventually
 lifting it to a single-option parser, ready to be combined with
 other parsers using normal `Applicative` and `Alternative` combinators.
-
-See the [haddock documentation][hackage] for `Options.Applicative.Builder`
-for a full list of builders and modifiers.
 
 There are four different kinds of options in `purescript-optparse`:
 regular options, flags, arguments, and commands. In the following,
@@ -419,23 +415,16 @@ value "out.txt", a long name "output" and a short name "o".
 
 A regular `option` can return an object of any type, and takes a
 *reader* parameter which specifies how the argument should be parsed.
-A common reader is `auto`, which requires a `Read` instance for the
-return type and uses it to parse its argument. For example:
+Built in readers are `str`, `int`, `number` and `boolean` for example:
 
 ```purs
 lineCount :: Parser Int
-lineCount = option auto
+lineCount = option int
             ( long "lines"
            <> short 'n'
            <> metavar "K"
            <> help "Output the last K lines" )
 ```
-
-specifies a regular option with an `Int` argument. We added an
-explicit type annotation here, since without it the parser would
-have been polymorphic in the output type. There's usually no need
-to add type annotations, however, because the type will be normally
-inferred from the context in which the parser is used.
 
 Further information on *readers* is available [below](#option-readers).
 
@@ -477,7 +466,7 @@ settings could be specified on a scale; the following parser will
 count the number of instances of `-v` on the command line.
 
 ```purs
-length <$> many (flag' () (short 'v'))
+length <$> many (flag' unit (short 'v'))
 ```
 
 Flags can be used together after a single hyphen, so  `-vvv` and
@@ -495,7 +484,7 @@ a command line argument for which the reader succeeds. For example
 argument str (metavar "FILE")
 ```
 
-creates an argument accepting any string.  To accept an arbitrary
+creates an argument accepting any string. To accept an arbitrary
 number of arguments, combine the `argument` builder with either the
 `many` or `some` combinator:
 
@@ -555,19 +544,19 @@ data Command
   ...
 ```
 
-Alternatively, you can directly return an `IO` action from a parser,
+Alternatively, you can directly return an `Effect` action from a parser,
 and execute it using `join` from `Control.Monad`.
 
 ```purs
-start :: String -> IO ()
-stop :: IO ()
+start :: String -> Effect Unit
+stop :: Effect Unit
 
-opts :: Parser (IO ())
+opts :: Parser (Effect Unit)
 opts = subparser
   ( command "start" (info (start <$> argument str idm) idm)
  <> command "stop"  (info (pure stop) idm) )
 
-main :: IO ()
+main :: Effect Unit
 main = join $ execParser (info opts idm)
 ```
 
@@ -575,14 +564,14 @@ main = join $ execParser (info opts idm)
 
 *Modifiers* are instances of the `Semigroup` and `Monoid` typeclasses,
 so they can be combined using the composition function `append`
-(or simply `(<>)`).  Since different builders accept different sets
+(or simply `(<>)`). Since different builders accept different sets
 of modifiers, modifiers have a type parameter that specifies which
 builders support it.
 
 For example,
 
 ```purs
-command :: String -> ParserInfo a -> Mod CommandFields a
+command :: forall a. String -> ParserInfo a -> Mod CommandFields a
 ```
 
 can only be used with [commands](#commands), as the `CommandFields`
@@ -599,18 +588,18 @@ Parsers are run with the `execParser` family of functions — from
 easiest to use to most flexible these are:
 
 ```purs
-execParser       :: ParserInfo a -> IO a
-customExecParser :: ParserPrefs -> ParserInfo a -> IO a
-execParserPure   :: ParserPrefs -> ParserInfo a -> [String] -> ParserResult a
+execParser       :: forall a. ParserInfo a -> Effect a
+customExecParser :: forall a. ParserPrefs -> ParserInfo a -> Effect a
+execParserPure   :: forall a. ParserPrefs -> ParserInfo a -> Array String -> ParserResult a
 ```
 
-When using the `IO` functions, retrieving command line arguments
+When using the `Effect` functions, retrieving command line arguments
 and handling exit codes and failure will be done automatically.
 When using `execParserPure`, the functions
 
 ```purs
-handleParseResult :: ParserResult a -> IO a
-overFailure :: (ParserHelp -> ParserHelp) -> ParserResult a -> ParserResult a
+handleParseResult :: forall a. ParserResult a -> Effect a
+overFailure :: forall a. (ParserHelp -> ParserHelp) -> ParserResult a -> ParserResult a
 ```
 
 can be used to correctly set exit codes and display the help message;
@@ -620,13 +609,12 @@ additional information for example).
 ### Option readers
 
 Options and Arguments require a way to interpret the string passed
-on the command line to the type desired. The `str` and `auto`
-*readers* are the most common way, but one can also create a custom
-reader that doesn't use the `Read` type class or return a `String`,
-and use it to parse the option. A custom reader is a value in the
+on the command line to the type desired. `str`, `int`, `number` and
+`boolean` are Built in *readers*, but one can also create a custom
+reader and use it to parse the option. A custom reader is a value in the
 `ReadM` monad.
 
-We provide the `eitherReader :: (String -> Either String a) -> ReadM a`
+We provide the `eitherReader :: forall a. (String -> Either String a) -> ReadM a`
 convenience function to help create these values, where a `Left` will
 hold the error message for a parse failure.
 
@@ -642,15 +630,6 @@ option parseFluxCapacitor ( long "flux-capacitor" )
 One can also use `ReadM` directly, using `readerAsk` to obtain the
 command line string, and `readerAbort` or `readerError` within the
 `ReadM` monad to exit with an error message.
-
-One nice property of `eitherReader` is how well it composes with
-[attoparsec] parsers with
-
-```purs
-import qualified Data.Attoparsec.Text as A
-attoReadM :: A.Parser a -> ReadM a
-attoReadM p = eitherReader (A.parseOnly p <<< T.pack)
-```
 
 ### Preferences
 `PrefsMod`s can be used to customise the look of the usage text and
@@ -685,12 +664,12 @@ Here is a minimal example:
 ```purs
 import Options.Applicative
 
-sample :: Parser ()
-sample = () <$
+sample :: Parser Unit
+sample = unit <$
   switch (long "filename") <*
   switch (long "filler")
 
-main :: IO ()
+main :: Effect Unit
 main = customExecParser p opts
   where
     opts = info (helper <*> sample) idm
@@ -724,10 +703,10 @@ message will be, indicating what's missing, or what was unable to
 be parsed.
 
 ```purs
-myParser :: Parser ()
+myParser :: Parser Unit
 myParser = ...
 
-main :: IO ()
+main :: Effect Unit
 main = customExecParser p opts
   where
     opts = info (myParser <**> helper) idm
@@ -741,7 +720,7 @@ subcommands is command group separation.
 
 ```purs
 data Sample
-  = Hello [String]
+  = Hello (Array String)
   | Goodbye
   deriving (Eq, Show)
 
@@ -840,7 +819,7 @@ on a regular option or argument:
  - `action`: specifies a completion "action". An action dynamically determines
    a list of possible completions. Common actions are "file" and "directory";
    the full list of actions can be found in the [bash documentation];
- - `completer`: a completer is a function `String -> IO [String]`, returning
+ - `completer`: a completer is a function `String -> Effect (Array String)`, returning
    all possible completions for a given string. You can use this modifier to
    specify a custom completion for an argument.
 
@@ -869,30 +848,29 @@ standard output. They are then read by the completion script and put into the
 
 ## Applicative do
 
-Some may find using purescript-optparse easier using do notation.
-However, as `Parser` is not an instance of `Monad`, this can only
-be done in recent versions of GHC using the *ApplicativeDo* extension.
-For example, a parser specified in this manner might be
+Some may find using purescript-optparse easier using `ado` notation. For example,
+a parser specified in this `Sample` outlined in [Quick Start](#quick-start)
+will look like this:
 
 ```purs
-data Options = Options
-  { optArgs :: [String]
-  , optVerbose :: Boolean }
-
-opts :: Parser Options
-opts = do
-  optVerbose    <- switch (short 'v')
-  optArgs       <- many (argument str idm)
-  pure Options {..}
+sample :: Parser Sample
+sample = ado
+  hello <- strOption
+          ( long "hello"
+         <> metavar "TARGET"
+         <> help "Target for the greeting" )
+  quiet <- switch
+          ( long "quiet"
+         <> short 'q'
+         <> help "Whether to be quiet" )
+  enthusiasm <- option auto
+          ( long "enthusiasm"
+         <> help "How enthusiastically to greet"
+         <> showDefault
+         <> value 1
+         <> metavar "INT" )
+  in Sample { hello, quiet, enthusiasm }
 ```
-
-Here we've also used the *RecordWildCards* extension to make the
-parser specification cleaner. Compilation errors referring to `Monad`
-instances not being found are likely because the `Parser` specified
-can not be implemented entirely with `Applicative` (Note however,
-there were a few desugaring bugs regarding ApplicativeDo in GHC
-8.0.1, function application with `($)` in particular may not work,
-and the `pure` value should instead be wrapped parenthetically).
 
 ## FAQ
 

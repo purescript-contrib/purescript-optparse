@@ -14,7 +14,7 @@
   "dependencies": {
     "purescript-prelude": "^4.1.0",
     "purescript-effect": "^2.0.1",
-    "purescript-exitcodes": "safareli/purescript-exitcodes#patch-2",
+    "purescript-exitcodes": "^4.0.0",
     "purescript-strings": "^4.0.1",
     "purescript-ordered-collections": "^1.5.0",
     "purescript-arrays": "^5.2.0",

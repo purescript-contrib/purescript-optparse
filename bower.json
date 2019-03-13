@@ -1,5 +1,5 @@
 {
-  "name": "optparse-applicative",
+  "name": "purescript-optparse",
   "license": "BSD-3-Clause",
   "repository": {
     "type": "git",

@@ -57,6 +57,8 @@ import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Show (genericShow)
 import Data.List (List)
 import Data.List as List
+import Data.List.NonEmpty as NEL
+import Data.List.Types (NonEmptyList)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, over, un)
 import Data.Tuple.Nested (Tuple3, (/\))
@@ -370,12 +372,12 @@ manyM p = tailRecM go List.Nil
     aa <- oneM $ (Loop <$> p) <|> pure (Done unit)
     pure $ bimap (_ List.: acc) (\_ -> List.reverse acc) aa
 
-someM :: forall a. Parser a -> ParserM (List a)
-someM p = List.Cons <$> oneM p <*> manyM p
+someM :: forall a. Parser a -> ParserM (NonEmptyList a)
+someM p = NEL.cons' <$> oneM p <*> manyM p
 
 many :: forall a. Parser a -> Parser (List a)
 many = manyM >>> fromM
-some :: forall a. Parser a -> Parser (List a)
+some :: forall a. Parser a -> Parser (NonEmptyList a)
 some = someM >>> fromM
 
 -- | optparse-applicative supplies a rich completion system for bash,

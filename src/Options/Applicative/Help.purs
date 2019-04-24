@@ -1,7 +1,6 @@
-module Options.Applicative.Help 
-  -- | This is an empty module which re-exports
-  --   the help text system for optparse.
-
+-- | This is an empty module which re-exports
+-- | the help text system for optparse.
+module Options.Applicative.Help
   -- | Pretty printer. Reexports most combinators
   --   from Text.PrettyPrint.ANSI.Leijen
   ( module Options.Applicative.Help.Pretty

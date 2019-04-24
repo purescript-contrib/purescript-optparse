@@ -1,8 +1,7 @@
-{-# LANGUAGE RankNTypes #-}
-module Options.Applicative.Extra
   -- * Extra parser utilities
   --
   -- | This module contains high-level functions to run parsers.
+module Options.Applicative.Extra
   ( helper
   , hsubparser
   , execParser
@@ -68,12 +67,12 @@ exitWith :: forall void. ExitCode -> Effect void
 exitWith c = exit $ fromEnum c
 
 -- | A hidden \"helper\" option which always fails.
---
--- A common usage pattern is to apply this applicatively when
--- creating a 'ParserInfo'
---
--- > opts :: ParserInfo Sample
--- > opts = info (sample <**> helper) mempty
+-- |
+-- | A common usage pattern is to apply this applicatively when
+-- | creating a 'ParserInfo'
+-- |
+-- | > opts :: ParserInfo Sample
+-- | > opts = info (sample <**> helper) mempty
 
 helper :: forall a. Parser (a -> a)
 helper = abortOption ShowHelpText $ fold
@@ -83,8 +82,8 @@ helper = abortOption ShowHelpText $ fold
   , hidden ]
 
 -- | Builder for a command parser with a \"helper\" option attached.
--- Used in the same way as `subparser`, but includes a \"--help|-h\" inside
--- the subcommand.
+-- | Used in the same way as `subparser`, but includes a \"--help|-h\" inside
+-- | the subcommand.
 hsubparser :: forall a. Mod CommandFields a -> Parser a
 hsubparser m = mkParser d g rdr
   where
@@ -95,9 +94,9 @@ hsubparser m = mkParser d g rdr
       { infoParser = pinfo.infoParser <**> helper}
 
 -- | Run a program description.
---
--- Parse command line arguments. Display help text and exit if any parse error
--- occurs.
+-- |
+-- | Parse command line arguments. Display help text and exit if any parse error
+-- | occurs.
 execParser :: forall a. ParserInfo a -> Effect a
 execParser = customExecParser defaultPrefs
 
@@ -126,12 +125,12 @@ handleParseResult (CompletionInvoked compl) = do
       exitSuccess
 
 -- | Extract the actual result from a `ParserResult` value.
---
--- This function returns 'Nothing' in case of errors.  Possible error messages
--- or completion actions are simply discarded.
---
--- If you want to display error messages and invoke completion actions
--- appropriately, use 'handleParseResult' instead.
+-- |
+-- | This function returns 'Nothing' in case of errors.  Possible error messages
+-- | or completion actions are simply discarded.
+-- |
+-- | If you want to display error messages and invoke completion actions
+-- | appropriately, use 'handleParseResult' instead.
 getParseResult :: forall a. ParserResult a -> Maybe a
 getParseResult (Success a) = Just a
 getParseResult _ = Nothing
@@ -153,10 +152,10 @@ execParserPure pprefs pinfo args =
     p = runParserInfo pinfo' $ List.fromFoldable $ args
 
 -- | Generate a `ParserFailure` from a `ParseError` in a given `Context`.
---
--- This function can be used, for example, to show the help text for a parser:
---
--- @handleParseResult <<< Failure $ parserFailure pprefs pinfo ShowHelpText mempty@
+-- |
+-- | This function can be used, for example, to show the help text for a parser:
+-- |
+-- | @handleParseResult <<< Failure $ parserFailure pprefs pinfo ShowHelpText mempty@
 parserFailure :: forall a. ParserPrefs -> ParserInfo a
               -> ParseError -> Array Context
               -> ParserFailure ParserHelp
@@ -185,7 +184,7 @@ parserFailure pprefs pinfo msg ctx = ParserFailure $ \progn ->
     with_context arr i f = case Array.head arr of
       Nothing -> f [] i
       Just (Context _ e) -> runExists (\i' -> f (contextNames arr) i') e
-    
+
     usage_help :: forall x. String -> Array String -> ParserInfo x -> ParserHelp
     usage_help progn names (ParserInfo i) = case msg of
       InfoMsg _

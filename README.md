@@ -587,14 +587,18 @@ that they can be used with any builder.
 
 #### A list of values with a default
 
-There are a few ways we could parse multiple values for an option.
+We'll show 2 wrong ways to do it and then show the correct way to do it.
 
+Wrong way #1: using `some (strOption modifiers)`/`many (strOption modifiers)`.
 We could use `some (strOption (long "arg-name" <> value "default"))`, which allows you to pass in values like this:
 `command --arg-name value1 --arg-name value2`
 
-However, the default value will be a single `String`, not a `List String`.
+However, that isn't stack stafe.
 
-To workaround this, we could use `eitherReader` to define our own `ReadM` that properly handles this`:
+Wrong way #2: using `some (option) <|> NonEmptyString.singleton "default"`
+This command is stack-safe, but does not allow us to display the default value in the help text.
+
+Correct way: use `eitherReader` to define our own `ReadM` that properly handles this:
 ```purescript
 multiString :: Pattern -> ReadM (Array String)
 multiString splitPattern = eitherReader \s ->

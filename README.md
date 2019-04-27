@@ -593,10 +593,10 @@ Wrong way #1: using `some (strOption modifiers)`/`many (strOption modifiers)`.
 We could use `some (strOption (long "arg-name" <> value "default"))`, which allows you to pass in values like this:
 `command --arg-name value1 --arg-name value2`
 
-However, that isn't stack stafe.
+However, combining `some`/`many` with a default `value` modifier guarantees that the parser will never terminate. Rather, it'll run forever and eventually your machine will run out of stack/memory and crash. Why? Because `some`/`many` work by parsing forever until they fail and then they return all the results they found. If the `value` modifier is added, then these parsers will never fail.
 
 Wrong way #2: using `some (option) <|> NonEmptyString.singleton "default"`
-This command is stack-safe, but does not allow us to display the default value in the help text.
+This command will terminate, but does not allow us to display the default value in the help text.
 
 Correct way: use `eitherReader` to define our own `ReadM` that properly handles this:
 ```purescript

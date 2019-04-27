@@ -587,7 +587,7 @@ that they can be used with any builder.
 
 #### A list of values with a default
 
-We'll show 1 wrong ways to do it and then show 2 ways of implementing it.
+We'll show one wrong way to do it and then show 2 ways of implementing it.
 
 Wrong way: using `some (strOption modifiers)`/`many (strOption modifiers)`.
 We could use `some (strOption (long "arg-name" <> value "default"))`, which allows you to pass in values like this:

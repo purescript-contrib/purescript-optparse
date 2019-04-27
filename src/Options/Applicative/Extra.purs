@@ -66,14 +66,14 @@ exitSuccess = exit $ fromEnum ExitCode.Success
 exitWith :: forall void. ExitCode -> Effect void
 exitWith c = exit $ fromEnum c
 
--- | A hidden \"helper\" option which always fails.
+-- | A hidden "helper" option which always fails. Use this to
+-- | add the `--help` flag to your CLI parser
 -- |
 -- | A common usage pattern is to apply this applicatively when
 -- | creating a 'ParserInfo'
 -- |
 -- | > opts :: ParserInfo Sample
 -- | > opts = info (sample <**> helper) mempty
-
 helper :: forall a. Parser (a -> a)
 helper = abortOption ShowHelpText $ fold
   [ long "help"
@@ -81,8 +81,8 @@ helper = abortOption ShowHelpText $ fold
   , help "Show this help text"
   , hidden ]
 
--- | Builder for a command parser with a \"helper\" option attached.
--- | Used in the same way as `subparser`, but includes a \"--help|-h\" inside
+-- | Builder for a command parser with a "helper" option attached.
+-- | Used in the same way as `subparser`, but includes a `--help|-h` inside
 -- | the subcommand.
 hsubparser :: forall a. Mod CommandFields a -> Parser a
 hsubparser m = mkParser d g rdr

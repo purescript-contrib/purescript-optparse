@@ -595,23 +595,23 @@ We could use `some (strOption (long "arg-name" <> value "default"))`, which allo
 
 However, combining `some`/`many` with a default `value` modifier guarantees that the parser will never terminate. Rather, it'll run forever and eventually your machine will run out of stack/memory and crash. Why? Because `some`/`many` work by parsing forever until they fail and then they return all the results they found. If the `value` modifier is added, then these parsers will never fail.
 
-Right way (but inconsistent): using `some (optionArgs) <|> NonEmptyString.singleton "default"`
+Right way (but inconsistent): using `many (optionArgs) <|> pure ("default" : Nil)`
 This will terminate, but it's implementation is not consistent with how we implement other options with a default value that appears in the help text.
 
 Using a more verbose example:
 ```purescript
-parseStringList :: Parser (NonEmptyList String)
+parseStringList :: Parser (List String)
 parseStringList =
   let
-    defauleValue = NonEmptyList.singleton "a"
-    nonEmptyListOption =
-      some (strOption ( long "arg-name"
+    defaultValue = "default" : Nil
+    listStrOption =
+      many (strOption ( long "arg-name"
                       <> help ("Option explanation, \
                                \default: " <> show defaultValue
                               )
                       )
            )
-  in nonEmptyListOption <|> (pure defauleValue)
+  in listStrOption <|> (pure defaultValue)
 ```
 
 Right way (and consistent: use `eitherReader` to define our own `ReadM` that properly handles this:

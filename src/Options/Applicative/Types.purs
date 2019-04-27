@@ -375,8 +375,47 @@ manyM p = tailRecM go List.Nil
 someM :: forall a. Parser a -> ParserM (NonEmptyList a)
 someM p = NEL.cons' <$> oneM p <*> manyM p
 
+-- | Parses 0 or more values using the given parser. **Note: this should
+-- | never be used with the `value` modifier.** 
+-- |
+-- | For example, by using this option
+-- | `many (strOption (long "arg-name"))`
+-- |
+-- | one could write
+-- | ```
+-- | command
+-- | # produces Nil
+-- |
+-- | command --arg-name first
+-- | # produces ("first" : Nil)
+-- |
+-- | command --arg-name first --arg-name second
+-- | # produces ("first" : "second" : Nil)
+-- | ```
+-- |
+-- | To parse 1 or more values, see `some` instead.
 many :: forall a. Parser a -> Parser (List a)
 many = manyM >>> fromM
+
+-- | Parses 1 or more values using the given parser. **Note: this should
+-- | never be used with the `value` modifier.**
+-- |
+-- | For example, by using this option
+-- | `some (strOption (long "arg-name"))`
+-- |
+-- | one could write
+-- | ```
+-- | command
+-- | # produces failure message
+-- |
+-- | command --arg-name first
+-- | # produces (NonEmptyList "first" Nil)
+-- |
+-- | command --arg-name first --arg-name second
+-- | # produces (NonEmptyList "first" ("second" : Nil))
+-- | ```
+-- |
+-- | To parse 0 or more values, see `many` instead.
 some :: forall a. Parser a -> Parser (NonEmptyList a)
 some = someM >>> fromM
 

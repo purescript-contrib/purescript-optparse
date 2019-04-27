@@ -11,6 +11,7 @@ import Data.Foldable (foldr, intercalate)
 import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Show (genericShow)
 import Data.Int as Int
+import Data.Lazy (Lazy, force, defer)
 import Data.List as List
 import Data.List.Lazy as LL
 import Data.Maybe (Maybe(..))
@@ -583,11 +584,25 @@ data Doc        = Fail
 -- provides two default display functions 'displayS' and
 -- 'displayIO'. You can provide your own display function by writing a
 -- function from a @SimpleDoc@ to your own output format.
-data SimpleDoc  = SFail
+data SimpleDoc = SFail
                 | SEmpty
                 | SChar Char SimpleDoc
                 | SText Int String SimpleDoc
                 | SLine Int SimpleDoc
+
+data LazySimpleDoc = SFail'
+                   | SEmpty'
+                   | SChar' Char (Lazy LazySimpleDoc)
+                   | SText' Int String (Lazy LazySimpleDoc)
+                   | SLine' Int (Lazy LazySimpleDoc)
+
+forceSimpleDoc :: LazySimpleDoc -> SimpleDoc
+forceSimpleDoc = case _ of
+  SFail' -> SFail
+  SEmpty' -> SEmpty
+  SChar' c x -> SChar c (forceSimpleDoc $ force x)
+  SText' i s x -> SText i s (forceSimpleDoc $ force x)
+  SLine' i x -> SLine i (forceSimpleDoc $ force x)
 
 derive instance simpleDocEq :: Eq SimpleDoc
 derive instance simpleDocOrd :: Ord SimpleDoc
@@ -748,7 +763,7 @@ renderPretty = renderFits fits1
 renderSmart :: Number -> Int -> Doc -> SimpleDoc
 renderSmart = renderFits fitsR
 
-renderFits :: (Int -> Int -> Int -> SimpleDoc -> Boolean)
+renderFits :: (Int -> Int -> Int -> LazySimpleDoc -> Boolean)
            -> Number -> Int -> Doc -> SimpleDoc
 renderFits fits rfrac w headNode
     -- I used to do a @SSGR [Reset]@ here, but if you do that it will result
@@ -759,7 +774,7 @@ renderFits fits rfrac w headNode
     -- What I "really" want to do here is do an initial Reset iff there is some
     -- ANSI color within the Doc, but that's a bit fiddly. I'll fix it if someone
     -- complains!
-    = best 0 0 (Cons 0 headNode Nil)
+    = forceSimpleDoc $best 0 0 (Cons 0 headNode Nil)
     where
       -- r :: the ribbon width in characters
       r  = max 0 (min w (Int.round (Int.toNumber w * rfrac)))
@@ -767,14 +782,15 @@ renderFits fits rfrac w headNode
       -- best :: n = indentation of current line
       --         k = current column
       --        (ie. (k >= n) && (k - n == count of inserted characters)
-      best n k Nil = SEmpty
+      best :: Int -> Int -> Docs -> LazySimpleDoc
+      best n k Nil = SEmpty'
       best n k (Cons i d ds)
         = case d of
-            Fail          -> SFail
+            Fail          -> SFail'
             Empty         -> best n k ds
-            Char c        -> let k' = k+1 in SChar c (best n k' ds)
-            Text l s      -> let k' = k+l in SText l s (best n k' ds)
-            Line          -> SLine i (best i i ds)
+            Char c        -> let k' = k+1 in SChar' c (defer \_ -> best n k' ds)
+            Text l s      -> let k' = k+l in SText' l s (defer\_ -> best n k' ds)
+            Line          -> SLine' i (defer \_ -> best i i ds)
             FlatAlt x _   -> best n k (Cons i x ds)
             Cat x y       -> best n k (Cons i x (Cons i y ds))
             Nest j x      -> let i' = i+j in best n k (Cons i' x ds)
@@ -800,13 +816,13 @@ renderFits fits rfrac w headNode
         in if fits w (min n k) width' x' then x' else let y' = best n k (Cons i y ds) in y'
       
 -- @fits1@ does 1 line lookahead.
-fits1 :: Int -> Int -> Int -> SimpleDoc -> Boolean
+fits1 :: Int -> Int -> Int -> LazySimpleDoc -> Boolean
 fits1 _ _ w x        | w < 0         = false
-fits1 _ _ w SFail                    = false
-fits1 _ _ w SEmpty                   = true
-fits1 p m w (SChar c x)              = fits1 p m (w - 1) x
-fits1 p m w (SText l s x)            = fits1 p m (w - l) x
-fits1 _ _ w (SLine i x)              = true
+fits1 _ _ w SFail'                    = false
+fits1 _ _ w SEmpty'                   = true
+fits1 p m w (SChar' c x)              = fits1 p m (w - 1) (force x)
+fits1 p m w (SText' l s x)            = fits1 p m (w - l) (force x)
+fits1 _ _ w (SLine' i x)              = true
 
 -- @fitsR@ has a little more lookahead: assuming that nesting roughly
 -- corresponds to syntactic depth, @fitsR@ checks that not only the current line
@@ -818,14 +834,14 @@ fits1 _ _ w (SLine i x)              = true
 -- p = pagewidth
 -- m = minimum nesting level to fit in
 -- w = the width in which to fit the first line
-fitsR :: Int -> Int -> Int -> SimpleDoc -> Boolean
-fitsR p m w x        | w < 0         = false
-fitsR p m w SFail                    = false
-fitsR p m w SEmpty                   = true
-fitsR p m w (SChar c x)              = fitsR p m (w - 1) x
-fitsR p m w (SText l s x)            = fitsR p m (w - l) x
-fitsR p m w (SLine i x) | m < i      = fitsR p m (p - i) x
-                        | otherwise  = true
+fitsR :: Int -> Int -> Int -> LazySimpleDoc -> Boolean
+fitsR p m w x            | w < 0         = false
+fitsR p m w SFail'                    = false
+fitsR p m w SEmpty'                   = true
+fitsR p m w (SChar' c x)              = fitsR p m (w - 1) (force x)
+fitsR p m w (SText' l s x)            = fitsR p m (w - l) (force x)
+fitsR p m w (SLine' i x) | m < i      = fitsR p m (p - i) (force x)
+                         | otherwise  = true
 
 -----------------------------------------------------------
 -- renderCompact: renders documents without indentation

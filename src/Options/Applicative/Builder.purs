@@ -287,7 +287,7 @@ strArgument :: Mod ArgumentFields String -> Parser String
 strArgument = argument str
 
 -- | Builder for a flag parser.
---
+-- |
 -- | A flag that switches from a \"default value\" to an \"active value\" when
 -- | encountered. For a simple boolean value, use `switch` instead.
 -- |

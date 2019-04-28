@@ -3,7 +3,7 @@ module Options.Applicative.Common (
   liftOpt,
   showOption,
 
-  
+
   module Reexport,
 
   -- * Running parsers
@@ -101,7 +101,7 @@ data OptWord = OptWord OptName (Maybe String)
 
 parseWord :: String -> Maybe OptWord
 parseWord = toCharArray >>> List.fromFoldable >>> go
-  where 
+  where
     go ('-' List.: '-' List.: w) = Just $ let
       Tuple opt arg = case List.span (_ /= '=') w of
         { rest: List.Nil} -> (Tuple w Nothing)
@@ -120,7 +120,7 @@ searchParser :: forall m a. Monad m
 searchParser _ (NilP _) = empty
 searchParser f (OptP opt) = f opt
 searchParser f (MultP e) = runExists (\(MultPE p1 p2) ->
-  let 
+  let
     a = searchParser f p1 <#> \p1' -> (p1' <*> p2)
     b = searchParser f p2 <#> \p2' -> (p1 <*> p2')
   in a <!> b
@@ -179,8 +179,8 @@ stepParser pprefs _ arg p = case parseWord arg of
 
 
 -- | Apply a 'Parser' to a command line, and return a result and leftover
--- arguments.  This function returns an error if any parsing error occurs, or
--- if any options are missing and don't have a default value.
+-- | arguments.  This function returns an error if any parsing error occurs, or
+-- | if any options are missing and don't have a default value.
 runParser :: forall m a. MonadP m => ArgPolicy -> IsCmdStart -> Parser a -> Args -> m (Tuple a Args)
 runParser policy isCmdStart p args = case args of
   List.Nil -> exitP isCmdStart policy p result
@@ -215,7 +215,7 @@ runParserFully policy p args = do
     List.Cons head _ -> parseError head (pure unit)
 
 -- | The default value of a 'Parser'.  This function returns an error if any of
--- the options don't have a default value.
+-- | the options don't have a default value.
 evalParser :: forall a. Parser a -> Maybe a
 evalParser (NilP r) = r
 evalParser (OptP _) = Nothing
@@ -226,7 +226,7 @@ evalParser (BindP e) = e # Free.resume' (\p k ->
   ) Just
 
 -- | Map a polymorphic function over all the options of a parser, and collect
--- the results in a list.
+-- | the results in a list.
 mapParser :: forall a b. (forall x. OptHelpInfo -> Option x -> b)
           -> Parser a -> Array b
 mapParser f = flatten <<< treeMapParser f
@@ -258,7 +258,7 @@ treeMapParser g = simplify <<< go false false false g
         let r' = r || hasArg p1 in MultNode [go m d r f p1, go m d r' f p2]
       )
       e
-      
+
     go m d r f (AltP p1 p2) = AltNode [go m d' r f p1, go m d' r f p2]
       where d' = d || has_default p1 || has_default p2
     go _ d r f (BindP e) = e # Free.resume' (\p k ->

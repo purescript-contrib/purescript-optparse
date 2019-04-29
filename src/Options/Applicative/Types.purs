@@ -182,7 +182,7 @@ instance optPropertiesShow :: Show OptProperties where
     , propHelp: r.propHelp
     , propMetaVar: r.propMetaVar
     , propShowDefault: r.propShowDefault
-    , propDescMod: map (const "<func>") r.propDescMod 
+    , propDescMod: map (const "<func>") r.propDescMod
     } <> ")"
 
 -- | A single option of a parser.
@@ -194,7 +194,7 @@ derive instance optionNewtype :: Newtype (Option a) _
 data SomeParser = SomeParser (Exists Parser)
 
 -- | Subparser context, containing the 'name' of the subparser, and its parser info.
---   Used by parserFailure to display relevant usage information when parsing inside a subparser fails.
+-- | Used by parserFailure to display relevant usage information when parsing inside a subparser fails.
 data Context = Context String (Exists ParserInfo)
 
 instance optionShow :: Show (Option a) where
@@ -206,7 +206,7 @@ instance optionFunctor :: Functor Option where
 -- | A reader is used by the 'option' and 'argument' builders to parse
 -- | the data passed by the user on the command line into a data type.
 -- |
--- | The most common are 'str' which is used for 'String', there are 
+-- | The most common are 'str' which is used for 'String', there are
 -- | readers for `Int`, `Number`, `Boolean`.
 -- |
 -- | More complex types can use the 'eitherReader' or 'maybeReader'
@@ -375,8 +375,47 @@ manyM p = tailRecM go List.Nil
 someM :: forall a. Parser a -> ParserM (NonEmptyList a)
 someM p = NEL.cons' <$> oneM p <*> manyM p
 
+-- | Parses 0 or more values using the given parser. **Note: this should
+-- | never be used with the `value` modifier.** 
+-- |
+-- | For example, by using this option
+-- | `many (strOption (long "arg-name"))`
+-- |
+-- | one could write
+-- | ```
+-- | command
+-- | # produces Nil
+-- |
+-- | command --arg-name first
+-- | # produces ("first" : Nil)
+-- |
+-- | command --arg-name first --arg-name second
+-- | # produces ("first" : "second" : Nil)
+-- | ```
+-- |
+-- | To parse 1 or more values, see `some` instead.
 many :: forall a. Parser a -> Parser (List a)
 many = manyM >>> fromM
+
+-- | Parses 1 or more values using the given parser. **Note: this should
+-- | never be used with the `value` modifier.**
+-- |
+-- | For example, by using this option
+-- | `some (strOption (long "arg-name"))`
+-- |
+-- | one could write
+-- | ```
+-- | command
+-- | # produces failure message
+-- |
+-- | command --arg-name first
+-- | # produces (NonEmptyList "first" Nil)
+-- |
+-- | command --arg-name first --arg-name second
+-- | # produces (NonEmptyList "first" ("second" : Nil))
+-- | ```
+-- |
+-- | To parse 0 or more values, see `many` instead.
 some :: forall a. Parser a -> Parser (NonEmptyList a)
 some = someM >>> fromM
 

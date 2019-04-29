@@ -1,8 +1,7 @@
 -- | You don't need to import this module to enable bash completion.
---
--- See
--- <http://github.com/pcapriotti/optparse-applicative/wiki/Bash-Completion the wiki>
--- for more information on bash completion.
+-- |
+-- | See [the wiki](http://github.com/pcapriotti/optparse-applicative/wiki/Bash-Completion)
+-- | for more information on bash completion.
 module Options.Applicative.BashCompletion
   ( bashCompletionParser
   ) where
@@ -85,7 +84,7 @@ bashCompletionQuery pinfo pprefs richness ws i _ = case runCompletion compl ppre
   Just (Left (Tuple (SomeParser e) a))
     -> runExists (\p -> list_options a p) e
   Just (Right c)
-    -> run_completer c 
+    -> run_completer c
   Nothing
     -> pure []
   where
@@ -207,24 +206,23 @@ bashCompletionScript prog progn = pure
   , ""
   , "complete -o filenames -F _" <> progn <> " " <> progn ]
 
-{-
-/Note/: Fish Shell
-
-Derived from Drezil's post in #169.
-
-@
-commandline
--c or --cut-at-cursor only print selection up until the current cursor position
--o or --tokenize tokenize the selection and print one string-type token per line
-@
-
-We tokenize so that the call to count (and hence --bash-completion-index)
-gets the right number use cut-at-curstor to not bother sending anything
-after the cursor position, which allows for completion of the middle of
-words.
-
-Tab characters separate items from descriptions.
--}
+-- |
+-- | **Note**: Fish Shell
+-- |
+-- | Derived from Drezil's post in #169.
+-- |
+-- | ```
+-- | commandline
+-- | -c or --cut-at-cursor only print selection up until the current cursor position
+-- | -o or --tokenize tokenize the selection and print one string-type token per line
+-- | ```
+-- |
+-- | We tokenize so that the call to count (and hence --bash-completion-index)
+-- | gets the right number use cut-at-curstor to not bother sending anything
+-- | after the cursor position, which allows for completion of the middle of
+-- | words.
+-- |
+-- | Tab characters separate items from descriptions.
 fishCompletionScript :: String -> String -> Effect (Array String)
 fishCompletionScript prog progn = pure
   [ " function _" <> progn

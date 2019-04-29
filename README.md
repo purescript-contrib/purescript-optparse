@@ -27,6 +27,8 @@ context-sensitive bash, zsh, and fish completions.
     - [Arguments](#arguments)
     - [Commands](#commands)
     - [Modifiers](#modifiers)
+    - [Common Builder Patterns](#common-builder-patterns)
+        - [A list of values with a default](#a-list-of-values-with-a-default)
 - [Custom parsing and error handling](#custom-parsing-and-error-handling)
     - [Parser runners](#parser-runners)
     - [Option readers](#option-readers)
@@ -580,6 +582,66 @@ for other types of options.
 
 Many modifiers are polymorphic in this type argument, which means
 that they can be used with any builder.
+
+### Common Builder Patterns
+
+#### A list of values with a default
+
+We'll show one wrong way to do it and then show 2 ways of implementing it.
+
+Wrong way: using `some (strOption modifiers)`/`many (strOption modifiers)`.
+We could use `some (strOption (long "arg-name" <> value "default"))`, which allows you to pass in values like this:
+`command --arg-name value1 --arg-name value2`
+
+However, combining `some`/`many` with a default `value` modifier guarantees that the parser will never terminate. Rather, it'll run forever and eventually your machine will run out of stack/memory and crash. Why? Because `some`/`many` work by parsing forever until they fail and then they return all the results they found. If the `value` modifier is added, then these parsers will never fail.
+
+Right way (but inconsistent): using `many (optionArgs) <|> pure ("default" : Nil)`
+This will terminate, but it's implementation is not consistent with how we implement other options with a default value that appears in the help text.
+
+Using a more verbose example:
+```purescript
+parseStringList :: Parser (List String)
+parseStringList =
+  let
+    defaultValue = "default" : Nil
+    listStrOption =
+      many (strOption ( long "arg-name"
+                      <> help ("Option explanation, \
+                               \default: " <> show defaultValue
+                              )
+                      )
+           )
+  in listStrOption <|> (pure defaultValue)
+```
+
+Right way (and consistent: use `eitherReader` to define our own `ReadM` that properly handles this:
+```purescript
+multiString :: Pattern -> ReadM (Array String)
+multiString splitPattern = eitherReader \s ->
+  let strArray = filter String.null $ split splitPattern s
+  in
+    if Array.null strArray
+      then Left "got empty string as input"
+      else Right strArray
+
+commaSeparatedStringList :: Parser (Array String)
+commaSeparatedStringList =
+option (multiString $ Pattern ",")
+    ( long "arg-name"
+   <> metavar "value1,value2,...,value3"
+   <> help "A comma-separated list of strings"
+   <> value [ "first", "second", "third" ]
+   <> showDefaultWith (\array -> intercalate "," array)
+    )
+```
+Using the above, we could then pass in our arguments like this:
+`command --arg-name first,second,third`
+
+Moreover, the help text would also display useful information here:
+```
+--arg-name value1,value2,...,value3
+      A comma-separated list of strings. (default: first,second,third)
+```
 
 ## Custom parsing and error handling
 

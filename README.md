@@ -75,7 +75,7 @@ Here's a simple example of a parser.
 import Options.Applicative
 import Data.Semigroup ((<>))
 
-data Sample = Sample
+type Sample =
   { hello      :: String
   , quiet      :: Boolean
   , enthusiasm :: Int }

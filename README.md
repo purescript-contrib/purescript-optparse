@@ -618,7 +618,7 @@ Right way (and consistent: use `eitherReader` to define our own `ReadM` that pro
 ```purescript
 multiString :: Pattern -> ReadM (Array String)
 multiString splitPattern = eitherReader \s ->
-  let strArray = filter String.null $ split splitPattern s
+  let strArray = filter (not <<< String.null) $ split splitPattern s
   in
     if Array.null strArray
       then Left "got empty string as input"

@@ -22,11 +22,11 @@
     "purescript-memoize": "^5.0.0",
     "purescript-transformers": "^4.2.0",
     "purescript-exists": "^4.0.0",
-    "purescript-node-process": "^6.0.0",
+    "purescript-node-process": "^7.0.0",
     "purescript-free": "^5.1.0"
   },
   "devDependencies": {
-    "purescript-quickcheck": "^5.0.0",
+    "purescript-quickcheck": "^6.1.0",
     "purescript-spec": "^3.1.0"
   }
 }

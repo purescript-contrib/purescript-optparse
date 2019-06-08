@@ -3,7 +3,6 @@ module Test.Main where
 import Prelude
 
 import Control.Alt ((<|>))
-import Control.Lazy (defer)
 import Control.Monad.Gen (class MonadGen, chooseFloat, chooseInt, suchThat)
 import Control.Monad.Gen.Common (genMaybe)
 import Control.Monad.Rec.Class (class MonadRec)
@@ -23,7 +22,7 @@ import Data.String.Gen (genString)
 import Data.Tuple (Tuple(..), fst)
 import Data.Tuple.Nested (tuple3, (/\))
 import Effect (Effect)
-import Effect.Aff (Aff, error, throwError)
+import Effect.Aff (Aff, error, throwError, launchAff_)
 import Effect.Class (class MonadEffect, liftEffect)
 import Examples.Alternatives as Alternatives
 import Examples.Cabal as Cabal
@@ -85,7 +84,7 @@ assertCompletion x f = case x of
     pure $ f completions
   Failure _   -> pure $ counterExample "unexpected failure"
   Success val -> pure $ counterExample ("unexpected result " <> show val)
-  
+
 assertHasLine :: String -> String -> QC.Result
 assertHasLine l s = l `elem` lines s <?> ("expected line:\n\t" <> l <> "\nnot found")
 
@@ -231,8 +230,8 @@ Available options:
   -h,--help                Show this help text
 
 Available commands:
-  b                        
-  c                        
+  b
+  c
 """
 
 asset_helponemptysub :: Asset
@@ -281,50 +280,50 @@ checkHelpText :: forall a. Show a => Asset -> ParserInfo a -> Array String -> QC
 checkHelpText = checkHelpTextWith ExitCode.Success defaultPrefs
 
 spec :: Spec Unit
-spec = describe "optparse" $ defer \_ -> do
-  
-  it "prop_hello" $ defer \_ -> do
+spec = describe "optparse" $ do
+
+  it "prop_hello" $ do
     isOK $ checkHelpText asset_hello Hello.opts ["--help"]
-  
-  it "prop_modes" $ defer \_ -> do
+
+  it "prop_modes" $ do
     isOK $ checkHelpText asset_commands Commands.opts ["--help"]
 
-  it "prop_cmd_header" $ defer \_ -> do
+  it "prop_cmd_header" $ do
     let i = info (helper <*> Commands.sample) (header "foo")
     isOK $ conjoin
       [ checkHelpTextWith ExitCode.Error defaultPrefs asset_commands_header i ["-zello"]
       , checkHelpTextWith ExitCode.Error (prefs showHelpOnError) asset_commands_header_full i ["-zello"]
       ]
 
-  
-  it "prop_cabal_conf" $ defer \_ -> do
+
+  it "prop_cabal_conf" $ do
     isOK $ checkHelpText asset_cabal Cabal.pinfo ["configure", "--help"]
 
-  
-  it "prop_args" $ defer \_ -> do
+
+  it "prop_args" $ do
     let result = run Commands.opts ["hello", "foo", "bar"]
     isOK $ assertResult result (_ === (Commands.Hello ["foo", "bar"]))
 
-  
-  it "prop_args_opts" $ defer \_ -> do
+
+  it "prop_args_opts" $ do
     let result = run Commands.opts ["hello", "foo", "--bar"]
     isOK $ assertError result $ const QC.Success
 
-  
-  it "prop_args_ddash" $ defer \_ -> do
+
+  it "prop_args_ddash" $ do
     let result = run Commands.opts ["hello", "foo", "--", "--bar", "--", "baz"]
     isOK $ assertResult result (_ === (Commands.Hello ["foo", "--bar", "--", "baz"]))
 
-  
-  it "prop_alts" $ defer \_ -> do
+
+  it "prop_alts" $ do
     let result = run Alternatives.opts ["-b", "-a", "-b", "-a", "-a", "-b"]
     isOK $ assertResult result $ \xs ->
       let a = Alternatives.A
           b = Alternatives.B
       in  [b, a, b, a, a, b] === xs
 
-  
-  it "prop_show_default" $ defer \_ -> do
+
+  it "prop_show_default" $ do
     let p = option int
             ( short 'n'
             <> help "set count"
@@ -338,15 +337,15 @@ spec = describe "optparse" $ defer \_ -> do
           "  -n ARG                   set count (default: 0)"
           msg
 
-  
-  it "prop_alt_cont" $ defer \_ -> do
+
+  it "prop_alt_cont" $ do
     let p = Alternatives.a <|> Alternatives.b
         i = info p mempty
         result = run i ["-a", "-b"]
     isOK $ assertError result $ const QC.Success
 
-  
-  it "prop_alt_help" $ defer \_ -> do
+
+  it "prop_alt_help" $ do
     let p = p1 <|> p2 <|> p3
         p1 = (Just <<< Left)
           <$> strOption ( long "virtual-machine"
@@ -360,16 +359,16 @@ spec = describe "optparse" $ defer \_ -> do
         i = info (p <**> helper) mempty
     isOK $ checkHelpText asset_alt i ["--help"]
 
-  
-  it "prop_nested_commands" $ defer \_ -> do
+
+  it "prop_nested_commands" $ do
     let p3 = strOption (short 'a' <> metavar "A")
         p2 = subparser (command "b" (info p3 mempty))
         p1 = subparser (command "c" (info p2 mempty))
         i = info (p1 <**> helper) mempty
     isOK $ checkHelpTextWith ExitCode.Error defaultPrefs asset_nested i ["c", "b"]
 
-  
-  it "prop_drops_back_contexts" $ defer \_ -> do
+
+  it "prop_drops_back_contexts" $ do
     let p3 = strOption (short 'a' <> metavar "A")
         p2 = subparser (command "b" (info p3 mempty)  <> metavar "B")
         p1 = subparser (command "c" (info p3 mempty)  <> metavar "C")
@@ -377,8 +376,8 @@ spec = describe "optparse" $ defer \_ -> do
         i = info (p0 <**> helper) mempty
     isOK $ checkHelpTextWith ExitCode.Error defaultPrefs asset_dropback i ["b", "-aA"]
 
-  
-  it "prop_context_carry" $ defer \_ -> do
+
+  it "prop_context_carry" $ do
     let p3 = strOption (short 'a' <> metavar "A")
         p2 = subparser (command "b" (info p3 mempty)  <> metavar "B")
         p1 = subparser (command "c" (info p3 mempty)  <> metavar "C")
@@ -386,8 +385,8 @@ spec = describe "optparse" $ defer \_ -> do
         i = info (p0 <**> helper) mempty
     isOK $ checkHelpTextWith ExitCode.Error defaultPrefs asset_carry i ["b", "-aA", "c"]
 
-  
-  it "prop_help_on_empty" $ defer \_ -> do
+
+  it "prop_help_on_empty" $ do
     let p3 = strOption (short 'a' <> metavar "A")
         p2 = subparser (command "b" (info p3 mempty)  <> metavar "B")
         p1 = subparser (command "c" (info p3 mempty)  <> metavar "C")
@@ -395,8 +394,8 @@ spec = describe "optparse" $ defer \_ -> do
         i = info (p0 <**> helper) mempty
     isOK $ checkHelpTextWith ExitCode.Error (prefs showHelpOnEmpty) asset_helponempty i []
 
-  
-  it "prop_help_on_empty_sub" $ defer \_ -> do
+
+  it "prop_help_on_empty_sub" $ do
     let p3 = strOption (short 'a' <> metavar "A" <> help "both commands require this")
         p2 = subparser (command "b" (info p3 mempty)  <> metavar "B")
         p1 = subparser (command "c" (info p3 mempty)  <> metavar "C")
@@ -404,7 +403,7 @@ spec = describe "optparse" $ defer \_ -> do
         i = info (p0 <**> helper) mempty
     isOK $ checkHelpTextWith ExitCode.Error (prefs showHelpOnEmpty) asset_helponemptysub i ["b", "-aA", "c"]
 
-  it "prop_many_args" $ defer \_ -> do
+  it "prop_many_args" $ do
     quickCheckGen do
       nargs <- chooseInt 0 20 -- TODO if we use bigger upper range stack will explode
       let p = many (argument str mempty)
@@ -412,8 +411,8 @@ spec = describe "optparse" $ defer \_ -> do
           result = run i (replicate nargs "foo")
       pure $ assertResult result (\xs -> nargs === List.length xs)
 
-  
-  it "prop_disambiguate" $ defer \_ -> do
+
+  it "prop_disambiguate" $ do
     let p =   flag' 1 (long "foo")
           <|> flag' 2 (long "bar")
           <|> flag' 3 (long "baz")
@@ -421,8 +420,8 @@ spec = describe "optparse" $ defer \_ -> do
         result = execParserPure (prefs disambiguate) i ["--f"]
     isOK $ assertResult result (_ === 1)
 
-  
-  it "prop_ambiguous" $ defer \_ -> do
+
+  it "prop_ambiguous" $ do
     let p =   flag' 1 (long "foo")
           <|> flag' 2 (long "bar")
           <|> flag' 3 (long "baz")
@@ -430,7 +429,7 @@ spec = describe "optparse" $ defer \_ -> do
         result = execParserPure (prefs disambiguate) i ["--ba"]
     isOK $ assertError result $ const QC.Success
 
-  it "prop_completion" $ defer \_ -> do
+  it "prop_completion" $ do
     let p = Tuple
           <$> strOption (long "foo" <> value "")
           <*> strOption (long "bar" <> value "")
@@ -438,7 +437,7 @@ spec = describe "optparse" $ defer \_ -> do
         result = run i ["--bash-completion-index", "0"]
     isOK =<< assertCompletion result (["--foo", "--bar"] === _)
 
-  it "prop_completion_opt_after_double_dash" $ defer \_ -> do
+  it "prop_completion_opt_after_double_dash" $ do
     let p = Tuple
           <$> strOption (long "foo" <> value "")
           <*> argument readerAsk (completeWith ["bar"])
@@ -448,7 +447,7 @@ spec = describe "optparse" $ defer \_ -> do
                       , "--bash-completion-word", "--"]
     isOK =<< assertCompletion result (["bar"] === _)
 
-  it "prop_completion_only_reachable" $ defer \_ -> do
+  it "prop_completion_only_reachable" $ do
     let p = Tuple
           <$> strArgument (completeWith ["reachable"])
           <*> strArgument (completeWith ["unreachable"])
@@ -456,7 +455,7 @@ spec = describe "optparse" $ defer \_ -> do
         result = run i ["--bash-completion-index", "0"]
     isOK =<< assertCompletion result (["reachable"] === _)
 
-  it "prop_completion_only_reachable_deep" $ defer \_ -> do
+  it "prop_completion_only_reachable_deep" $ do
     let p = Tuple
           <$> strArgument (completeWith ["seen"])
           <*> strArgument (completeWith ["now-reachable"])
@@ -466,7 +465,7 @@ spec = describe "optparse" $ defer \_ -> do
                       , "--bash-completion-word", "seen" ]
     isOK =<< assertCompletion result (["now-reachable"] === _)
 
-  it "prop_completion_multi" $ defer \_ -> do
+  it "prop_completion_multi" $ do
     let p = many (strArgument (completeWith ["reachable"]))
         i = info p mempty
         result = run i [ "--bash-completion-index", "3"
@@ -474,7 +473,7 @@ spec = describe "optparse" $ defer \_ -> do
                       , "--bash-completion-word", "nope" ]
     isOK =<< assertCompletion result (["reachable"] === _)
 
-  it "prop_completion_rich" $ defer \_ -> do
+  it "prop_completion_rich" $ do
     let p = Tuple
           <$> option readerAsk (long "foo" <> help "Fo?")
           <*> option readerAsk (long "bar" <> help "Ba?")
@@ -482,7 +481,7 @@ spec = describe "optparse" $ defer \_ -> do
         result = run i ["--bash-completion-enriched", "--bash-completion-index", "0"]
     isOK =<< assertCompletion result (["--foo\tFo?", "--bar\tBa?"] === _)
 
-  it "prop_completion_rich_lengths" $ defer \_ -> do
+  it "prop_completion_rich_lengths" $ do
     let p = Tuple
           <$> option readerAsk (long "foo" <> help "Foo hide this")
           <*> option readerAsk (long "bar" <> help "Bar hide this")
@@ -494,8 +493,8 @@ spec = describe "optparse" $ defer \_ -> do
     isOK =<< assertCompletion result (["--foo\tFoo...", "--bar\tBar..."] === _)
 
 
-  
-  it "prop_bind_usage" $ defer \_ -> do
+
+  it "prop_bind_usage" $ do
     let p = Array.fromFoldable <$> many (argument str (metavar "ARGS..."))
         i = info (p <**> helper) briefDesc
         result = run i ["--help"]
@@ -503,38 +502,38 @@ spec = describe "optparse" $ defer \_ -> do
       let text = Array.head $ lines $ fst $ renderFailure failure "test"
       in  Just "Usage: test [ARGS...]" === text
 
-  
-  it "prop_issue_19" $ defer \_ -> do
+
+  it "prop_issue_19" $ do
     let p = option (map Just str) ( short 'x' <> value Nothing )
         i = info (p <**> helper) mempty
         result = run i ["-x", "foo"]
     isOK $ assertResult result (Just "foo" === _)
 
-  
-  it "prop_arguments1_none" $ defer \_ -> do
+
+  it "prop_arguments1_none" $ do
     let p = Array.fromFoldable <$> some (argument str mempty)
         i = info (p <**> helper) mempty
         result = run i []
     isOK $ assertError result $ const QC.Success
 
-  
-  it "prop_arguments1_some" $ defer \_ -> do
+
+  it "prop_arguments1_some" $ do
     let p = Array.fromFoldable <$> some (argument str mempty)
         i = info (p <**> helper) mempty
         result = run i ["foo", "--", "bar", "baz"]
     isOK $ assertResult result (["foo", "bar", "baz"] === _)
 
-  
-  it "prop_arguments_switch" $ defer \_ -> do
-    let p = map Array.fromFoldable 
+
+  it "prop_arguments_switch" $ do
+    let p = map Array.fromFoldable
           $ switch (short 'x')
           *> many (argument str mempty)
         i = info p mempty
         result = run i ["--", "-x"]
     isOK $ assertResult result $ \args -> ["-x"] === args
 
-  
-  it "prop_issue_35" $ defer \_ -> do
+
+  it "prop_issue_35" $ do
     let p =  flag' true (short 't' <> hidden) <|> flag' false (short 'f')
         i = info p mempty
         result = run i []
@@ -542,8 +541,8 @@ spec = describe "optparse" $ defer \_ -> do
       let text = lines <<< fst $ renderFailure failure "test"
       in  ["Missing: -f", "", "Usage: test -f"] === text
 
-  
-  it "prop_backtracking" $ defer \_ -> do
+
+  it "prop_backtracking" $ do
     let p2 = switch (short 'a')
         p1 = Tuple
           <$> subparser (command "c" (info p2 mempty))
@@ -552,8 +551,8 @@ spec = describe "optparse" $ defer \_ -> do
         result = execParserPure (prefs noBacktrack) i ["c", "-b"]
     isOK $ assertError result $ const QC.Success
 
-  
-  it "prop_subparser_inline" $ defer \_ -> do
+
+  it "prop_subparser_inline" $ do
     let p2 = switch (short 'a')
         p1 = Tuple
           <$> subparser (command "c" (info p2 mempty))
@@ -562,8 +561,8 @@ spec = describe "optparse" $ defer \_ -> do
         result = execParserPure (prefs subparserInline) i ["c", "-b", "-a" ]
     isOK $ assertResult result ((Tuple true true) === _)
 
-  
-  it "prop_error_context" $ defer \_ -> do
+
+  it "prop_error_context" $ do
     let p = Tuple <$> option int (long "port")
               <*> option int (long "key")
         i = info p mempty
@@ -574,8 +573,8 @@ spec = describe "optparse" $ defer \_ -> do
         in  conjoin [ String.Pattern "port" `isInfixOf` errMsg <?> "no context in error message (option)"
                     , String.Pattern "foo" `isInfixOf` errMsg <?> "no context in error message (value)"]
 
-  
-  it "prop_arg_order_1" $ defer \_ -> do
+
+  it "prop_arg_order_1" $ do
     let p = Tuple
             <$> argument (condr even) mempty
             <*> argument (condr odd) mempty
@@ -583,8 +582,8 @@ spec = describe "optparse" $ defer \_ -> do
         result = run i ["3", "6"]
     isOK $ assertError result $ const QC.Success
 
-  
-  it "prop_arg_order_2" $ defer \_ -> do
+
+  it "prop_arg_order_2" $ do
     let p = tuple3
           <$> argument (condr even) mempty
           <*> option (condr even) (short 'a')
@@ -593,8 +592,8 @@ spec = describe "optparse" $ defer \_ -> do
         result = run i ["2", "-b", "3", "-a", "6"]
     isOK $ assertResult result (_ === tuple3 2 6 3)
 
-  
-  it "prop_arg_order_3" $ defer \_ -> do
+
+  it "prop_arg_order_3" $ do
     let p = Tuple
             <$> (  argument (condr even) mempty
               <|> option int (short 'n') )
@@ -611,8 +610,8 @@ spec = describe "optparse" $ defer \_ -> do
         result = run i ["-xc"]
     in assertResult result (_ === (Tuple j k))
 
-  
-  it "prop_unix_with_options" $ defer \_ -> do
+
+  it "prop_unix_with_options" $ do
     let p = Tuple
             <$> flag' 1 (short 'x')
             <*> strOption (short 'a')
@@ -620,15 +619,15 @@ spec = describe "optparse" $ defer \_ -> do
         result = run i ["-xac"]
     isOK $ assertResult result (_ === (Tuple 1 "c"))
 
-  
-  it "prop_count_flags" $ defer \_ -> do
+
+  it "prop_count_flags" $ do
     let p = List.length <$> many (flag' unit (short 't'))
         i = info p mempty
         result = run i ["-ttt"]
     isOK $ assertResult result (_ === 3)
 
-  
-  it "prop_issue_47" $ defer \_ -> do
+
+  it "prop_issue_47" $ do
     let p = option r (long "test" <> value 9)
         r = readerError "error message"
         result = run (info p mempty) ["--test", "x"]
@@ -636,8 +635,8 @@ spec = describe "optparse" $ defer \_ -> do
       let text = fromMaybe "" $ Array.head $ lines $ fst $ renderFailure failure "test"
       in  String.Pattern "error message" `isInfixOf` text <?> "no error message"
 
-  
-  it "prop_long_help" $ defer \_ -> do
+
+  it "prop_long_help" $ do
     let p = Formatting.opts <**> helper
         i = info p
           ( progDesc (fold
@@ -646,23 +645,23 @@ spec = describe "optparse" $ defer \_ -> do
               , "to fit the size of the terminal" ]) )
     isOK $ checkHelpTextWith ExitCode.Success (prefs (columns 50)) asset_formatting i ["--help"]
 
-  
-  it "prop_issue_50" $ defer \_ -> do
+
+  it "prop_issue_50" $ do
     let p = argument str (metavar "INPUT")
             <* switch (long "version")
         result = run (info p mempty) ["--version", "test"]
     isOK $ assertResult result $ \r -> "test" === r
 
-  
-  it "prop_intersperse_1" $ defer \_ -> do
+
+  it "prop_intersperse_1" $ do
     let p = many (argument str (metavar "ARGS"))
             <* switch (short 'x')
         result = run (info p noIntersperse)
                   ["a", "-x", "b"]
     isOK $ assertResult result $ \args -> ["a", "-x", "b"] === Array.fromFoldable args
 
-  
-  it "prop_intersperse_2" $ defer \_ -> do
+
+  it "prop_intersperse_2" $ do
     let p = subparser
             (  command "run"
               ( info (many (argument str (metavar "OPTIONS")))
@@ -676,8 +675,8 @@ spec = describe "optparse" $ defer \_ -> do
     isOK $ conjoin [ assertResult result1 $ \args -> ["foo", "-x"] === Array.fromFoldable args
               , assertError result2 $ const QC.Success ]
 
-  
-  it "prop_intersperse_3" $ defer \_ -> do
+
+  it "prop_intersperse_3" $ do
     let p = tuple3 <$> switch ( long "foo" )
                 <*> strArgument ( metavar "FILE" )
                 <*> many ( strArgument ( metavar "ARGS..." ) )
@@ -688,8 +687,8 @@ spec = describe "optparse" $ defer \_ -> do
               , true               === b
               , "myfile"           === f ]
 
-  
-  it "prop_forward_options" $ defer \_ -> do
+
+  it "prop_forward_options" $ do
     let p = Tuple <$> switch ( long "foo" )
                 <*> many ( strArgument ( metavar "ARGS..." ) )
         i = info p forwardOptions
@@ -698,8 +697,8 @@ spec = describe "optparse" $ defer \_ -> do
       conjoin [ true               === b
               , ["--fo", "myfile"] === Array.fromFoldable a ]
 
-  
-  it "prop_issue_52" $ defer \_ -> do
+
+  it "prop_issue_52" $ do
     let p = subparser
           ( metavar "FOO"
           <> command "run" (info (pure "foo") mempty) )
@@ -708,8 +707,8 @@ spec = describe "optparse" $ defer \_ -> do
       let text = lines <<< fst $ renderFailure failure "test"
       ["Missing: FOO", "", "Usage: test FOO"] === text
 
-  
-  it "prop_multiple_subparsers" $ defer \_ -> do
+
+  it "prop_multiple_subparsers" $ do
     let p1 = subparser
           (command "add" (info (pure unit)
               ( progDesc "Add a file to the repository" )))
@@ -719,8 +718,8 @@ spec = describe "optparse" $ defer \_ -> do
         i = info (p1 *> p2 <**> helper) mempty
     isOK $ checkHelpText asset_subparsers i ["--help"]
 
-  
-  it "prop_argument_error" $ defer \_ -> do
+
+  it "prop_argument_error" $ do
     let r = (condr (_ == 42))
           <|> (str >>= \x -> readerError (x <> " /= 42"))
         p1 = argument r mempty
@@ -729,8 +728,8 @@ spec = describe "optparse" $ defer \_ -> do
       let text = fromMaybe "" $ Array.head $ lines $ fst $ renderFailure failure "test"
       in  "3 /= 42" === text
 
-  
-  it "prop_reader_error_mplus" $ defer \_ -> do
+
+  it "prop_reader_error_mplus" $ do
     let r = (condr (_ == 42))
           <|> (str >>= \x -> readerError (x <> " /= 42"))
         p1 = argument r mempty
@@ -739,8 +738,8 @@ spec = describe "optparse" $ defer \_ -> do
       let text = fromMaybe "" $ Array.head $ lines $ fst $ renderFailure failure "test"
       in  "foo /= 42" === text
 
-  
-  it "prop_missing_flags_described" $ defer \_ -> do
+
+  it "prop_missing_flags_described" $ do
     let p = tuple3
           <$> option str (short 'a')
           <*> option str (short 'b')
@@ -750,8 +749,8 @@ spec = describe "optparse" $ defer \_ -> do
       let text = fromMaybe "" $ Array.head $ lines $ fst $ renderFailure failure "test"
       in  "Missing: -a ARG" === text
 
-  
-  it "prop_many_missing_flags_described" $ defer \_ -> do
+
+  it "prop_many_missing_flags_described" $ do
     let p = Tuple
           <$> option str (short 'a')
           <*> option str (short 'b')
@@ -760,47 +759,47 @@ spec = describe "optparse" $ defer \_ -> do
       let text = fromMaybe "" $ Array.head $ lines $ fst $ renderFailure failure "test"
       in  "Missing: -a ARG -b ARG" === text
 
-  
-  it "prop_alt_missing_flags_described" $ defer \_ -> do
+
+  it "prop_alt_missing_flags_described" $ do
     let p = option str (short 'a') <|> option str (short 'b')
         i = info p mempty
     isOK $ assertError (run i []) $ \failure ->
       let text = fromMaybe "" $ Array.head $ lines $ fst $ renderFailure failure "test"
       in  "Missing: (-a ARG | -b ARG)" === text
 
-  
-  it "prop_missing_option_parameter_err" $ defer \_ -> do
+
+  it "prop_missing_option_parameter_err" $ do
     let p = option str (short 'a')
         i = info p mempty
     isOK $ assertError (run i ["-a"]) $ \failure ->
       let text = fromMaybe "" $ Array.head $ lines $ fst $ renderFailure failure "test"
       in  "The option `-a` expects an argument." === text
 
-  
-  it "prop_many_pairs_success" $ defer \_ -> do
+
+  it "prop_many_pairs_success" $ do
     let p = many $ Tuple <$> argument str mempty <*> argument str mempty
         i = info p mempty
         nargs = 10000 - 9900 -- TODO remove `if we remove -9900` stack will explode
         result = run i (replicate nargs "foo")
     isOK $ assertResult result $ \xs -> nargs `div` 2 === List.length xs
 
-  
-  it "prop_many_pairs_failure" $ defer \_ -> do
+
+  it "prop_many_pairs_failure" $ do
     let p = many $ Tuple <$> argument str mempty <*> argument str mempty
         i = info p mempty
         nargs = 9999 - 9900 -- TODO remove `if we remove -9900` stack will explode
         result = run i (replicate nargs "foo")
     isOK $ assertError result $ const QC.Success
 
-  
-  it "prop_many_pairs_lazy_progress" $ defer \_ -> do
+
+  it "prop_many_pairs_lazy_progress" $ do
     let p = many $ Tuple <$> optional (option str (short 'a')) <*> argument str mempty
         i = info p mempty
         result = run i ["foo", "-abar", "baz"]
     isOK $ assertResult result $ \xs -> [(Tuple (Just "bar") "foo"), (Tuple Nothing "baz")] === Array.fromFoldable xs
 
-  
-  it "prop_suggest" $ defer \_ -> do
+
+  it "prop_suggest" $ do
     let p2 = subparser (command "first"   (info (pure unit) mempty))
         p1 = subparser (command "fst"     (info (pure unit) mempty))
         p3 = subparser (command "far-off" (info (pure unit) mempty))
@@ -844,7 +843,7 @@ prop_extractChunk_2 = do
   pure $ extractChunk (map pure x) === x
 
 prop_stringChunk_1 :: forall m. MonadRec m => MonadGen m => m QC.Result
-prop_stringChunk_1 = do 
+prop_stringChunk_1 = do
   f <- chooseFloat 0.0 1.0
   w <- chooseInt 0 200
   s <- String.replaceAll (String.Pattern "\n") (String.Replacement "") <$> genString genUnicodeChar
@@ -897,12 +896,12 @@ prop_edit_transposition = do
   b <- suchThat genUnicodeChar \b -> a /= b
   -- TODO in haskell version transposition is 1 operation but that that algorithm
   -- was a bit harder and I've ported simpler one which counts transposition as 2 operations
-  pure $ editDistance (as <> [a] <> [b] <> bs) (as <> [b] <> [a] <> bs) === 2 
+  pure $ editDistance (as <> [a] <> [b] <> bs) (as <> [b] <> [a] <> bs) === 2
 
 ---
 
 main :: Effect Unit
-main = Spec.run [consoleReporter] spec
+main = launchAff_ $ Spec.runSpec [consoleReporter] spec
 
 
 

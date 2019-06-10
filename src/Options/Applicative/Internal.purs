@@ -217,9 +217,9 @@ runListT xs = do
     TCons x xt -> liftM1 (List.Cons x) (runListT xt)
 
 instance listTFunctor :: Monad m => Functor (ListT m) where
-  map f = ListT
-         <<< liftM1 (bimapTStep f (map f))
-         <<< stepListT
+  map f v = ListT
+         $ liftM1 (bimapTStep f (map f))
+         $ stepListT v
 
 instance listTApply :: Monad m => Apply (ListT m) where
   apply = ap

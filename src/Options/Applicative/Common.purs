@@ -189,7 +189,7 @@ runParser policy isCmdStart p args = case args of
     prefs <- getPrefs
     (Tuple mp' args') <- do_step prefs arg argt
     case mp' of
-      Nothing -> hoistMaybe result <|> parseError arg p
+      Nothing -> hoistMaybe (unexpectedError arg p) result
       Just p' -> runParser (newPolicy arg) CmdCont p' args'
   where
     result = (Tuple) <$> evalParser p <*> pure args
@@ -201,8 +201,8 @@ runParser policy isCmdStart p args = case args of
       NoIntersperse -> if isJust (parseWord a) then NoIntersperse else AllPositionals
       x             -> x
 
-parseError :: forall m x a. MonadP m => String -> Parser x -> m a
-parseError arg p = errorP $ UnexpectedError arg $ SomeParser $ mkExists p
+unexpectedError :: forall x. String -> Parser x -> ParseError
+unexpectedError arg p = UnexpectedError arg $ SomeParser $ mkExists p
 
 runParserInfo :: forall m a. MonadP m => ParserInfo a -> Args -> m a
 runParserInfo i = runParserFully (un ParserInfo i).infoPolicy (un ParserInfo i).infoParser
@@ -212,12 +212,12 @@ runParserFully policy p args = do
   (Tuple r args') <- runParser policy CmdStart p args
   case args' of
     List.Nil -> pure r
-    List.Cons head _ -> parseError head (pure unit)
+    List.Cons head _ -> errorP $ unexpectedError head (pure unit)
 
 -- | The default value of a 'Parser'.  This function returns an error if any of
 -- | the options don't have a default value.
 evalParser :: forall a. Parser a -> Maybe a
-evalParser (NilP r) = r
+evalParser (NilP r) = Just r
 evalParser (OptP _) = Nothing
 evalParser (MultP e) = runExists (\(MultPE p1 p2) -> evalParser p1 <*> evalParser p2) e
 evalParser (AltP p1 p2) = evalParser p1 <|> evalParser p2

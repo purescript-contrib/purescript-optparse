@@ -43,14 +43,13 @@ module Options.Applicative.Types (
 
 import Prelude
 
-import Control.Alternative (class Alt, class Alternative, class Plus, alt, empty, (<|>))
+import Control.Alternative (class Alt, class Alternative, class Plus, alt, (<|>))
 import Control.Monad.Except (Except)
 import Control.Monad.Except.Trans (class MonadThrow, throwError)
 import Control.Monad.Free (Free, liftF)
 import Control.Monad.Reader.Trans (ReaderT, ask)
 import Control.Monad.Rec.Class (class MonadRec, Step(..), tailRecM)
 import Control.Monad.Trans.Class (lift)
-import Control.MonadPlus (class MonadPlus, class MonadZero)
 import Data.Bifunctor (bimap)
 import Data.Exists (Exists, mkExists, runExists)
 import Data.Generic.Rep (class Generic)
@@ -74,7 +73,6 @@ data ParseError
   = ErrorMsg String
   | InfoMsg String
   | ShowHelpText
-  | UnknownError
   | MissingError IsCmdStart SomeParser
   | ExpectsArgError String
   | UnexpectedError String SomeParser
@@ -83,12 +81,7 @@ derive instance isCmdStartGeneric :: Generic IsCmdStart _
 instance isCmdStartShow :: Show IsCmdStart where show = genericShow
 data IsCmdStart = CmdStart | CmdCont
 
-
-instance parseErrorMonoid :: Monoid ParseError where
-  mempty = UnknownError
-
 instance parseErrorSemigroup :: Semigroup ParseError where
-  append m UnknownError = m
   append _ m = m
 
 
@@ -228,11 +221,6 @@ instance readMApplicative :: Applicative ReadM where
 instance readMAlt :: Alt ReadM where
   alt (ReadM x) (ReadM y) = ReadM $ alt x y
 
-instance readMPlus :: Plus ReadM where
-  empty = ReadM empty
-
-instance readMAlternative :: Alternative ReadM
-
 instance readMBind :: Bind ReadM where
   bind (ReadM r) f = ReadM $ r >>= un ReadM <<< f
 
@@ -240,9 +228,6 @@ instance readMMonad :: Monad ReadM
 
 instance readMMonadFail :: MonadThrow String ReadM where
   throwError = readerError
-
-instance readMMonadZero :: MonadZero ReadM
-instance readMMonadPlus :: MonadPlus ReadM
 
 -- | Return the value being read.
 readerAsk :: ReadM String
@@ -320,7 +305,7 @@ instance optReaderFunctor :: Functor OptReader where
 -- |
 -- | creates a parser for an option called \"output\".
 data Parser a
-  = NilP (Maybe a)
+  = NilP a
   | OptP (Option a)
   | MultP (Exists (MultPE a))
   | AltP (Parser a) (Parser a)
@@ -329,7 +314,7 @@ data Parser a
 data MultPE a x = MultPE (Parser (x -> a)) (Parser x)
 
 instance parserFunctor :: Functor Parser where
-  map f (NilP x) = NilP (map f x)
+  map f (NilP x) = NilP (f x)
   map f (OptP opt) = OptP (map f opt)
   map f (MultP e) = runExists (\(MultPE p1 p2) -> MultP $ mkExists $ MultPE (map (f <<< _) p1) p2) e
   map f (AltP p1 p2) = AltP (map f p1) (map f p2)
@@ -339,15 +324,10 @@ instance parserApply :: Apply Parser where
   apply a b = MultP (mkExists (MultPE a b))
 
 instance parserApplicative :: Applicative Parser where
-  pure = NilP <<< Just
+  pure = NilP
 
 instance parserAlt :: Alt Parser where
   alt = AltP
-
-instance parserPlus :: Plus Parser where
-  empty = NilP Nothing
-
-instance parserAlternative :: Alternative Parser
 
 newtype ParserM a = ParserM (Free Parser a)
 

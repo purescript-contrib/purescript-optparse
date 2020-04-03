@@ -170,7 +170,6 @@ parserFailure pprefs pinfo msg ctx = ParserFailure $ \progn ->
   where
     exit_code = case msg of
       ErrorMsg _        -> (un ParserInfo pinfo).infoFailureCode
-      UnknownError       -> (un ParserInfo pinfo).infoFailureCode
       MissingError _ _    -> (un ParserInfo pinfo).infoFailureCode
       ExpectsArgError _ -> (un ParserInfo pinfo).infoFailureCode
       UnexpectedError _ _ -> (un ParserInfo pinfo).infoFailureCode
@@ -224,10 +223,6 @@ parserFailure pprefs pinfo msg ctx = ParserFailure $ \progn ->
               then "Invalid option `" <> arg <> "'"
               else "Invalid argument `" <> arg <> "'"
           in stringChunk msg'
-
-      UnknownError
-        -> mempty
-
 
     suggestion_help = suggestionsHelp $ case msg of
       UnexpectedError arg (SomeParser x)

@@ -27,7 +27,6 @@ import Prelude
 import Options.Applicative.Common (liftOpt)
 import Options.Applicative.Types (Completer, OptName, OptProperties(..), OptReader, OptVisibility(..), Option(..), ParseError, Parser, ParserInfo)
 import Control.Alt (alt)
-import Control.Plus (empty)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (class Newtype, over)
 import Data.Tuple (Tuple, fst, lookup)

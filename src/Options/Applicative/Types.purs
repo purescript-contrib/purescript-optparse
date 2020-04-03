@@ -38,12 +38,13 @@ module Options.Applicative.Types (
   optShowDefault,
   optDescMod,
   many,
-  some
+  some,
+  optional
   ) where
 
 import Prelude
 
-import Control.Alternative (class Alt, class Alternative, class Plus, alt, (<|>))
+import Control.Alternative (class Alt, alt, (<|>))
 import Control.Monad.Except (Except)
 import Control.Monad.Except.Trans (class MonadThrow, throwError)
 import Control.Monad.Free (Free, liftF)
@@ -398,6 +399,9 @@ many = manyM >>> fromM
 -- | To parse 0 or more values, see `many` instead.
 some :: forall a. Parser a -> Parser (NonEmptyList a)
 some = someM >>> fromM
+
+optional :: forall f a. Alt f => Applicative f => f a -> f (Maybe a)
+optional a = map Just a <|> pure Nothing
 
 -- | optparse-applicative supplies a rich completion system for bash,
 -- | zsh, and fish shells.

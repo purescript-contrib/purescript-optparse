@@ -7,7 +7,6 @@ import Control.Lazy (defer)
 import Control.Monad.Gen (class MonadGen, chooseFloat, chooseInt, suchThat)
 import Control.Monad.Gen.Common (genMaybe)
 import Control.Monad.Rec.Class (class MonadRec)
-import Control.MonadZero (guard)
 import Data.Array (fold, foldl, replicate)
 import Data.Array as Array
 import Data.Char.Gen (genUnicodeChar)
@@ -15,7 +14,7 @@ import Data.Either (Either(..))
 import Data.Foldable (elem)
 import Data.Int (even, odd)
 import Data.List as List
-import Data.Maybe (Maybe(..), fromMaybe, isJust, optional)
+import Data.Maybe (Maybe(..), fromMaybe, isJust)
 import Data.String (Pattern)
 import Data.String as String
 import Data.String.CodeUnits (toCharArray)
@@ -35,7 +34,7 @@ import ExitCodes as ExitCode
 import Options.Applicative (argument, briefDesc, columns, command, completeWith, defaultPrefs, disambiguate, execParserPure, flag', forwardOptions, header, help, (<**>), helper, hidden, info, int, long, metavar, noBacktrack, noIntersperse, option, prefs, progDesc, renderFailure, short, showDefault, showHelpOnEmpty, showHelpOnError, str, strArgument, strOption, subparser, subparserInline, switch, value)
 import Options.Applicative.Help (Chunk(..), editDistance, extractChunk, isEmpty, listToChunk, paragraph, stringChunk)
 import Options.Applicative.Internal.Utils (lines, words)
-import Options.Applicative.Types (CompletionResult(..), ParserFailure, ParserHelp, ParserInfo, ParserPrefs, ParserResult(..), ReadM, many, readerAsk, readerError, some)
+import Options.Applicative.Types (CompletionResult(..), ParserFailure, ParserHelp, ParserInfo, ParserPrefs, ParserResult(..), ReadM, many, readerAsk, readerError, some, optional)
 import Test.QuickCheck ((<?>), (===))
 import Test.QuickCheck as QC
 import Test.QuickCheck.Gen (Gen)
@@ -85,7 +84,7 @@ assertCompletion x f = case x of
     pure $ f completions
   Failure _   -> pure $ counterExample "unexpected failure"
   Success val -> pure $ counterExample ("unexpected result " <> show val)
-  
+
 assertHasLine :: String -> String -> QC.Result
 assertHasLine l s = l `elem` lines s <?> ("expected line:\n\t" <> l <> "\nnot found")
 
@@ -95,8 +94,10 @@ isInfixOf p = String.indexOf p >>> isJust
 condr :: (Int -> Boolean) -> ReadM Int
 condr f = do
   x <- int
-  guard (f x)
-  pure x
+  if (f x) then
+    pure x
+  else
+    readerError "oh no"
 
 type Asset = { name :: String, msg :: String }
 

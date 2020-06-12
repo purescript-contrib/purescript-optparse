@@ -81,7 +81,7 @@ data Sample = Sample
   , enthusiasm :: Int }
 
 sample :: Parser Sample
-sample = Sample
+sample = map Sample $ ({ hello:_, quiet:_, repeat:_})
       <$> strOption
           ( long "hello"
          <> metavar "TARGET"

@@ -104,7 +104,7 @@ import Data.Tuple (Tuple(..))
 import Data.Tuple.Nested ((/\))
 import ExitCodes (ExitCode)
 import ExitCodes as ExitCode
-import Global (isFinite, isNaN, readFloat)
+import Data.Number as Number
 import Options.Applicative.Builder.Completer (bashCompleter, listCompleter)
 import Options.Applicative.Builder.Internal (class HasCompleter, class HasMetavar, class HasName, class HasValue, ArgumentFields(..), CommandFields(..), DefaultProp(..), FlagFields(..), Mod(..), OptionFields(..), fieldMod, mkCommand, mkParser, modCompleter, name, optionMod)
 import Options.Applicative.Builder.Internal (internal, Mod, OptionFields, FlagFields, ArgumentFields, CommandFields, class HasName, class HasCompleter, class HasValue, class HasMetavar) as Reexport
@@ -127,7 +127,7 @@ int = eitherReader $ \s -> case Int.fromString s of
 
 -- | Number 'Option' reader.
 number :: ReadM Number
-number = eitherReader $ \s -> let n = readFloat s in if isNaN n || not isFinite n
+number = eitherReader $ \s -> let n = Number.fromString s in if Number.isNaN n || not Number.isFinite n
   then Left $ "Can't parse as Number: `" <> show s <> "`"
   else Right n
 

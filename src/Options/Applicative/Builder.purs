@@ -127,9 +127,9 @@ int = eitherReader $ \s -> case Int.fromString s of
 
 -- | Number 'Option' reader.
 number :: ReadM Number
-number = eitherReader $ \s -> let n = Number.fromString s in if Number.isNaN n || not Number.isFinite n
-  then Left $ "Can't parse as Number: `" <> show s <> "`"
-  else Right n
+number = eitherReader $ \s -> case Number.fromString s of
+  Nothing -> Left $ "Can't parse as Number: `" <> show s <> "`"
+  Just a -> Right a
 
 -- | Boolean 'Option' reader.
 boolean :: ReadM Boolean

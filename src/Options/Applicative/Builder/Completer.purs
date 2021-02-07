@@ -8,7 +8,8 @@ module Options.Applicative.Builder.Completer
 import Prelude
 
 import Control.Monad.Error.Class (try)
-import Data.Array (elem, foldr)
+import Data.Array (elem)
+import Data.Foldable (foldr)
 import Data.Array as Array
 import Data.Either (either)
 import Data.List as List
@@ -52,7 +53,8 @@ foreign import execSyncCommand :: String -> Effect String
 requote :: String -> String
 requote = toCharArray >>> List.fromFoldable >>> go' >>> List.toUnfoldable >>> fromCharArray
   where
-  go' s =
+  go' :: List.List Char -> List.List Char
+  go' = \s ->
     let
       -- Bash doesn't appear to allow "mixed" escaping
       -- in bash completions. So we don't have to really
@@ -78,6 +80,7 @@ requote = toCharArray >>> List.fromFoldable >>> go' >>> List.toUnfoldable >>> fr
       strong unescaped
 
     where
+      strong :: List.List Char -> List.List Char
       strong ss = '\'' List.: foldr go (List.singleton '\'') ss
         where
           -- If there's a single quote inside the
@@ -89,6 +92,7 @@ requote = toCharArray >>> List.fromFoldable >>> go' >>> List.toUnfoldable >>> fr
       -- Unescape a strongly quoted string
       -- We have two recursive functions, as we
       -- can enter and exit the strong escaping.
+      unescapeN :: List.List Char -> List.List Char
       unescapeN = goX
         where
           goX ('\'' List.: xs) = goN xs
@@ -101,6 +105,7 @@ requote = toCharArray >>> List.fromFoldable >>> go' >>> List.toUnfoldable >>> fr
           goN List.Nil = List.Nil
 
       -- Unescape an unquoted string
+      unescapeU :: List.List Char -> List.List Char
       unescapeU = goX
         where
           goX List.Nil = List.Nil
@@ -108,6 +113,7 @@ requote = toCharArray >>> List.fromFoldable >>> go' >>> List.toUnfoldable >>> fr
           goX (x List.: xs) = x List.: goX xs
 
       -- Unescape a weakly quoted string
+      unescapeD :: List.List Char -> List.List Char
       unescapeD = goX
         where
           -- Reached an escape character

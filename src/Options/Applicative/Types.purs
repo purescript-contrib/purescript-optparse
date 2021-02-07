@@ -54,7 +54,7 @@ import Control.MonadPlus (class MonadPlus, class MonadZero)
 import Data.Bifunctor (bimap)
 import Data.Exists (Exists, mkExists, runExists)
 import Data.Generic.Rep (class Generic)
-import Data.Generic.Rep.Show (genericShow)
+import Data.Show.Generic (genericShow)
 import Data.List (List)
 import Data.List as List
 import Data.List.NonEmpty as NEL

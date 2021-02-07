@@ -5,7 +5,7 @@ import Prelude
 import Control.Alt ((<|>))
 import Data.Array as Array
 import Data.Generic.Rep (class Generic)
-import Data.Generic.Rep.Show (genericShow)
+import Data.Show.Generic (genericShow)
 import Effect (Effect)
 import Effect.Class.Console (logShow)
 import Options.Applicative (Parser, ParserInfo, execParser, flag', helper, idm, info, short, (<**>))

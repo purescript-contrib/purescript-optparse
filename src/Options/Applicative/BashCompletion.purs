@@ -15,7 +15,7 @@ import Data.Either (Either(..))
 import Data.Exists (runExists)
 import Data.Foldable (fold, oneOf)
 import Data.Generic.Rep (class Generic)
-import Data.Generic.Rep.Show (genericShow)
+import Data.Show.Generic (genericShow)
 import Data.List as List
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
 import Data.Newtype (un)

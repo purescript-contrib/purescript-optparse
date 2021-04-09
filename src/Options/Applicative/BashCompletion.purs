@@ -13,7 +13,7 @@ import Data.Array as Array
 import Data.Array.NonEmpty as NEA
 import Data.Either (Either(..))
 import Data.Exists (runExists)
-import Data.Foldable (fold, oneOf)
+import Data.Foldable (fold)
 import Data.Generic.Rep (class Generic)
 import Data.Generic.Rep.Show (genericShow)
 import Data.List as List
@@ -52,8 +52,8 @@ bashCompletionParser pinfo pprefs = complParser
     failure opts = CompletionResult
       { execCompletion: \progn -> unLines <$> opts progn }
 
-    complParser = oneOf
-      [ failure <$>
+    complParser =
+      ( failure <$>
         (  bashCompletionQuery pinfo pprefs
         -- To get rich completions, one just needs the first
         -- command. To customise the lengths, use either of
@@ -68,16 +68,16 @@ bashCompletionParser pinfo pprefs = complParser
         <*> (map Array.fromFoldable <<< many <<< strOption) (long "bash-completion-word"
                                   `append` internal)
         <*> option int (long "bash-completion-index" `append` internal) )
-      , failure <$>
+      ) <|> failure <$>
           (bashCompletionScript <$>
             strOption (long "bash-completion-script" `append` internal))
-      , failure <$>
+        <|> failure <$>
           (fishCompletionScript <$>
             strOption (long "fish-completion-script" `append` internal))
-      , failure <$>
+        <|> failure <$>
           (zshCompletionScript <$>
             strOption (long "zsh-completion-script" `append` internal))
-      ]
+
 
 bashCompletionQuery :: forall a. ParserInfo a -> ParserPrefs -> Richness -> Array String -> Int -> String -> Effect (Array String)
 bashCompletionQuery pinfo pprefs richness ws i _ = case runCompletion compl pprefs of

@@ -27,7 +27,6 @@ import Prelude
 import Options.Applicative.Common (liftOpt)
 import Options.Applicative.Types (Completer, OptName, OptProperties(..), OptReader, OptVisibility(..), Option(..), ParseError, Parser, ParserInfo)
 import Control.Alt (alt)
-import Control.Plus (empty)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (class Newtype, over)
 import Data.Tuple (Tuple, fst, lookup)
@@ -169,9 +168,11 @@ mkParser :: forall a. DefaultProp a
          -> (OptProperties -> OptProperties)
          -> OptReader a
          -> Parser a
-mkParser d@(DefaultProp def _) g rdr = liftOpt opt `alt` maybe empty pure def
-  where
-    opt = mkOption d g rdr
+mkParser d@(DefaultProp def _) g rdr =
+  let
+    o = liftOpt $ mkOption d g rdr
+  in
+    maybe o (\a -> o `alt` pure a) def
 
 mkOption :: forall a. DefaultProp a
          -> (OptProperties -> OptProperties)

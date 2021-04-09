@@ -53,7 +53,7 @@ import Data.Tuple (Tuple(..))
 import Options.Applicative.Types (ArgPolicy, Completer, Context(..), IsCmdStart, ParseError(..), Parser, ParserInfo, ParserPrefs, ReadM(..), SomeParser(..))
 import Options.Applicative.Types (ParseError(..)) as Reexport
 
-class (MonadPlus m) <= MonadP (m :: Type -> Type) where
+class (Monad m, Alt m) <= MonadP (m :: Type -> Type) where
   enterContext :: forall a. String -> ParserInfo a -> m Unit
   exitContext :: m Unit
   getPrefs :: m ParserPrefs
@@ -75,19 +75,10 @@ instance pApplicative :: Applicative P where
 instance pAlt :: Alt P where
   alt (P x) (P y) = P $ x `alt` y
 
-instance pPlus :: Plus P where
-  empty = P empty
-
-instance pAlternative :: Alternative P
-
 instance pBind :: Bind P where
   bind (P x) k = P $ x >>= \a -> case k a of P y -> y
 
 instance pMonad :: Monad P
-
-instance pMonadZero :: MonadZero P
-
-instance pMonadPlus :: MonadPlus P
 
 contextNames :: Array Context -> Array String
 contextNames ns =
@@ -103,8 +94,8 @@ instance pMonadP :: MonadP P where
   exitP i _ p = P <<< maybe (throwError <<< MissingError i <<< SomeParser $ mkExists p) pure
   errorP = P <<< throwError
 
-hoistMaybe :: forall a m. MonadPlus m => Maybe a -> m a
-hoistMaybe = maybe empty pure
+hoistMaybe :: forall a m. MonadP m => ParseError -> Maybe a -> m a
+hoistMaybe err = maybe (errorP err) pure
 
 hoistEither :: forall a m. MonadP m => Either ParseError a -> m a
 hoistEither = either errorP pure
@@ -160,17 +151,11 @@ instance completionApplicative :: Applicative Completion where
 
 instance completionAlt :: Alt Completion where
   alt (Completion x) (Completion y) = Completion $ x `alt` y
-instance completionPlus :: Plus Completion where
-  empty = Completion empty
-instance completionAlternative :: Alternative Completion
 
 instance completionBind :: Bind Completion where
   bind (Completion x) k = Completion $ x >>= \a -> case k a of Completion y -> y
 
 instance completionMonad :: Monad Completion
-
-instance completionMonadZero :: MonadZero Completion
-instance completionMonadPlus :: MonadPlus Completion
 
 instance completionMonadP :: MonadP Completion where
   enterContext _ _ = pure unit

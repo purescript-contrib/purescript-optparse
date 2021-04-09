@@ -5,7 +5,7 @@ import Options.Applicative (Parser, ParserInfo, execParser, fullDesc, header, he
 import Data.Array (replicate)
 import Data.Foldable (sequence_)
 import Data.Generic.Rep (class Generic)
-import Data.Generic.Rep.Show (genericShow)
+import Data.Show.Generic (genericShow)
 import Effect (Effect)
 import Effect.Console (log)
 

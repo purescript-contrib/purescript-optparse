@@ -29,7 +29,8 @@ import Options.Applicative.Types (Completer, OptName, OptProperties(..), OptRead
 import Control.Alt (alt)
 import Data.Maybe (Maybe(..), maybe)
 import Data.Newtype (class Newtype, over)
-import Data.Tuple (Tuple, fst, lookup)
+import Data.Tuple (Tuple, fst)
+import Data.Foldable (lookup)
 import Data.Tuple.Nested (Tuple3, (/\))
 
 newtype OptionFields a = OptionFields

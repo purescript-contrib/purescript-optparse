@@ -9,7 +9,7 @@ import Prelude hiding ((<$>))
 import Data.Array as Array
 import Data.Foldable (foldr, intercalate)
 import Data.Generic.Rep (class Generic)
-import Data.Generic.Rep.Show (genericShow)
+import Data.Show.Generic (genericShow)
 import Data.Int as Int
 import Data.Lazy (Lazy, force, defer)
 import Data.List as List

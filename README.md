@@ -81,21 +81,34 @@ data Sample = Sample
   , enthusiasm :: Int }
 
 sample :: Parser Sample
-sample = map Sample $ ({ hello:_, quiet:_, repeat:_})
-      <$> strOption
-          ( long "hello"
-         <> metavar "TARGET"
-         <> help "Target for the greeting" )
-      <*> switch
-          ( long "quiet"
-         <> short 'q'
-         <> help "Whether to be quiet" )
-      <*> option int
-          ( long "enthusiasm"
-         <> help "How enthusiastically to greet"
-         <> showDefault
-         <> value 1
-         <> metavar "INT" )
+sample = ado
+  hello <- strOption $ fold
+    [ long "hello"
+    , metavar "TARGET"
+    , help "Target for the greeting"
+    ]
+
+  -- OR
+  -- hello <- strOption
+  --         ( long "hello"
+  --        <> metavar "TARGET"
+  --        <> help "Target for the greeting" )
+
+  quiet <- switch $ fold
+    [ long "quiet"
+    , short 'q'
+    , help "Whether to be quiet"
+    ]
+
+  enthusiasm <- option int $ fold
+    [ long "enthusiasm"
+    , help "How enthusiastically to greet"
+    , showDefault
+    , value 1
+    , metavar "INT"
+    ]
+  
+  in Sample { hello, quiet, enthusiasm }
 ```
 
 The parser is built using an applicative style starting from a

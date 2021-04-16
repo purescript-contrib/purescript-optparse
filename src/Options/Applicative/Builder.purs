@@ -60,7 +60,7 @@ module Options.Applicative.Builder
   , disabled
 
   -- * Builder for 'ParserInfo'
-  , InfoMod
+  , InfoMod(..)
   , fullDesc
   , briefDesc
   , header
@@ -75,7 +75,7 @@ module Options.Applicative.Builder
   , info
 
   -- * Builder for 'ParserPrefs'
-  , PrefsMod
+  , PrefsMod(..)
   , multiSuffix
   , disambiguate
   , showHelpOnError

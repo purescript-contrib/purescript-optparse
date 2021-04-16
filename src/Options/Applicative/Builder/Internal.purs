@@ -33,6 +33,7 @@ import Data.Tuple (Tuple, fst)
 import Data.Foldable (lookup)
 import Data.Tuple.Nested (Tuple3, (/\))
 
+newtype OptionFields :: forall k. k -> Type
 newtype OptionFields a = OptionFields
   { optNames :: Array OptName
   , optCompleter :: Completer
@@ -49,10 +50,12 @@ newtype CommandFields a = CommandFields
   , cmdGroup :: Maybe String }
 derive instance newtypeCommandFields :: Newtype (CommandFields a) _
 
+newtype ArgumentFields :: forall k. k -> Type
 newtype ArgumentFields a = ArgumentFields
   { argCompleter :: Completer }
 derive instance newtypeArgumentFields :: Newtype (ArgumentFields a) _
 
+class HasName :: forall k. (k -> Type) -> Constraint
 class HasName f where
   name :: forall a. OptName -> f a -> f a
 
@@ -63,6 +66,7 @@ instance optionFieldsHasName :: HasName OptionFields where
 instance flagFieldsHasName :: HasName FlagFields where
   name n = over FlagFields \fields -> fields{ flagNames = [n] <> fields.flagNames }
 
+class HasCompleter :: forall k. (k -> Type) -> Constraint
 class HasCompleter f where
   modCompleter :: forall a. (Completer -> Completer) -> f a -> f a
 
@@ -72,6 +76,7 @@ instance optionFieldsHasCompleter :: HasCompleter OptionFields where
 instance argumentFieldsHasCompleter :: HasCompleter ArgumentFields where
   modCompleter f = over ArgumentFields \p -> p{ argCompleter = f p.argCompleter }
 
+class HasValue :: forall k. (k -> Type) -> Constraint
 class HasValue f where
   -- this is just so that it is not necessary to specify the kind of f
   hasValueDummy :: forall a. f a -> Unit
@@ -80,6 +85,7 @@ instance optionFieldsHasValue :: HasValue OptionFields where
 instance argumentFieldsHasValue :: HasValue ArgumentFields where
   hasValueDummy _ = unit
 
+class HasMetavar :: forall k. (k -> Type) -> Constraint
 class HasMetavar f where
   hasMetavarDummy :: forall a. f a -> Unit
 instance optionFieldsHasMetavar :: HasMetavar OptionFields where

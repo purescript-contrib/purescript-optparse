@@ -174,7 +174,7 @@ parserHelp pprefs p = bodyHelp <<< vsepChunks $
     cs :: Array (NonEmptyArray (Tuple (Maybe String) (Chunk Doc)))
     cs = Array.groupBy ((==) `on` fst) $ cmdDesc p
 
-    group_title arr = 
+    group_title arr =
       let {head, tail} = (NEA.uncons arr)
       in with_title (fromMaybe def $ fst head) $ vcatChunks ([snd head] <> (snd <$> tail))
 

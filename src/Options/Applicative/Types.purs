@@ -357,7 +357,7 @@ someM :: forall a. Parser a -> ParserM (NonEmptyList a)
 someM p = NEL.cons' <$> oneM p <*> manyM p
 
 -- | Parses 0 or more values using the given parser. **Note: this should
--- | never be used with the `value` modifier.** 
+-- | never be used with the `value` modifier.**
 -- |
 -- | For example, by using this option
 -- | `many (strOption (long "arg-name"))`

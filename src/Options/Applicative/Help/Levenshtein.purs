@@ -33,7 +33,7 @@ editDistance xs ys = dist' (Array.length xs) (Array.length ys)
 
     dist 0 j = j
     dist i 0 = i
-    dist i j = minimum $ 
+    dist i j = minimum $
       (dist' (i-1) j + 1) `NonEmpty`
       [ dist' i (j-1) + 1
       , unsafePartial $ if xs `unsafeIndex` (i - 1) == ys `unsafeIndex` (j - 1)

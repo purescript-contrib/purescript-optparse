@@ -1,4 +1,4 @@
-module Options.Applicative.Internal.Utils 
+module Options.Applicative.Internal.Utils
   ( unLines
   , unWords
   , lines

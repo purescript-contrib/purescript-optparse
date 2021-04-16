@@ -54,7 +54,7 @@ instance showBuildOpts :: Show BuildOpts where show = genericShow
 version :: forall a. Parser (a -> a)
 version = infoOption "0.0.0"
   (  long "version"
-  <> help "Print version information" 
+  <> help "Print version information"
   <> hidden)
 
 parser :: Parser Args

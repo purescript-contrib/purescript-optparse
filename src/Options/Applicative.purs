@@ -1,4 +1,4 @@
-module Options.Applicative 
+module Options.Applicative
   ( module Options.Applicative.Builder
   , module Options.Applicative.Builder.Completer
   , module Options.Applicative.Extra

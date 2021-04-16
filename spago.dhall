@@ -1,4 +1,4 @@
-{ name = "affjax"
+{ name = "optparse"
 , dependencies =
   [ "prelude"
   , "effect"

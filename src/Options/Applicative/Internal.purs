@@ -41,7 +41,7 @@ import Control.Monad.Except.Trans (ExceptT, lift, runExceptT, throwError)
 import Control.Monad.Reader (Reader, runReader)
 import Control.Monad.Reader.Trans (mapReaderT, runReaderT, ReaderT, ask)
 import Control.Monad.State.Trans (StateT, evalStateT, get, modify_, put, runStateT)
-import Control.MonadPlus (class MonadPlus, class MonadZero, guard)
+import Control.MonadPlus (class MonadPlus, guard)
 import Data.Array as Array
 import Data.Either (Either(..), either)
 import Data.Exists (mkExists)
@@ -234,7 +234,7 @@ instance listTAlternative :: Monad m => Alternative (ListT m)
 instance listTMonadTrans :: MonadTrans ListT where
   lift = ListT <<< liftM1 (_ `TCons` empty)
 
-instance listTMonadZero :: Monad m => MonadZero (ListT m)
+-- | instance listTMonadZero :: Monad m => MonadZero (ListT m)
 instance listTMonadPlus :: Monad m => MonadPlus (ListT m)
 
 -- nondeterminism monad with cut operator
@@ -256,7 +256,7 @@ instance nondetTBind :: Monad m => Bind (NondetT m) where
   bind (NondetT m1) f = NondetT $ m1 >>= runNondetT <<< f
 instance nondetTMonad :: Monad m => Monad (NondetT m)
 
-instance nondetTMonadZero :: Monad m => MonadZero (NondetT m)
+-- | instance nondetTMonadZero :: Monad m => MonadZero (NondetT m)
 instance nondetTMonadPlus :: Monad m => MonadPlus (NondetT m)
 
 instance nondetTAlt :: Monad m => Alt (NondetT m) where

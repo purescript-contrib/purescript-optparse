@@ -1,5 +1,6 @@
 {
   "private": true,
+  "type": "module",
   "scripts": {
     "build": "pulp build -- --strict",
     "test": "pulp test"

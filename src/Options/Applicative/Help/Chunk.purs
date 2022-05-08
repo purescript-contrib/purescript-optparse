@@ -19,7 +19,6 @@ import Prelude
 
 import Control.Alt (class Alt)
 import Control.Alternative (class Alternative, class Plus)
-import Control.MonadZero (class MonadZero)
 import Data.Foldable (fold, foldr)
 import Data.Generic.Rep (class Generic)
 import Data.Show.Generic (genericShow)
@@ -45,7 +44,6 @@ derive newtype instance chunkPlus :: Plus Chunk
 derive newtype instance chunkAlternative :: Alternative Chunk
 derive newtype instance chunkBind :: Bind Chunk
 derive newtype instance chunkMonad :: Monad Chunk
-derive newtype instance chunkMonadZero :: MonadZero Chunk
 
 instance chunkSemigroup :: Semigroup a => Semigroup (Chunk a) where
   append = chunked append

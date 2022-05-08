@@ -1,7 +1,7 @@
 "use strict";
-var execSync = require('child_process').execSync;
+import execSync from 'child_process';
 
-exports.execSyncCommand = function(command) {
+export function execSyncCommand (command) {
   return function() {
     return execSync(command);
   };

@@ -17,7 +17,7 @@ module Options.Applicative.Help.Core
 
 import Prelude
 
-import Control.MonadZero (guard)
+import Control.Alternative (guard)
 import Data.Array (foldr)
 import Data.Array as Array
 import Data.Array.NonEmpty (NonEmptyArray)

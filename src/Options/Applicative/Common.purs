@@ -21,10 +21,11 @@ module Options.Applicative.Common (
 import Prelude
 
 import Control.Alt ((<|>))
+import Control.Alternative (guard)
 import Control.Monad.Free as Free
 import Control.Monad.State.Trans (StateT(..), get, put, runStateT)
 import Control.Monad.Trans.Class (lift)
-import Control.MonadZero (empty, guard)
+import Control.Plus (empty)
 import Data.Array as Array
 import Data.Exists (mkExists, runExists)
 import Data.Foldable (any, elem, oneOf)

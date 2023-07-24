@@ -684,7 +684,7 @@ spec = describe "optparse" $ do
                 <*> many ( strArgument ( metavar "ARGS..." ) )
         i = info p noIntersperse
         result = run i ["--foo", "myfile", "-a", "-b", "-c"]
-    isOK $ assertResult result $ \(b /\ f /\ as /\ unit) ->
+    isOK $ assertResult result $ \(b /\ f /\ as /\ _) ->
       conjoin [ ["-a", "-b", "-c"] === Array.fromFoldable as
               , true               === b
               , "myfile"           === f ]

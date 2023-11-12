@@ -1,0 +1,43 @@
+package:
+  dependencies:
+    [ "prelude"
+    , "effect"
+    , "exitcodes"
+    , "strings"
+    , "arrays"
+    , "console"
+    , "open-memoize"
+    , "transformers"
+    , "exists"
+    , "node-process"
+    , "free"
+    , "quickcheck"
+    , "spec"
+    , "aff"
+    , "bifunctors"
+    , "control"
+    , "either"
+    , "enums"
+    , "foldable-traversable"
+    , "gen"
+    , "integers"
+    , "lazy"
+    , "lists"
+    , "maybe"
+    , "newtype"
+    , "node-buffer"
+    , "node-streams"
+    , "nonempty"
+    , "numbers"
+    , "partial"
+    , "tailrec"
+    , "tuples"
+    ]
+  name: optparse
+  test:
+    dependencies: []
+    main: Test.Main
+workspace:
+  extra_packages: {}
+  package_set:
+    registry: 38.0.0 # 43.3.0

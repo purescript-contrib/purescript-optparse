@@ -35,7 +35,7 @@ package:
     version: 5.0.1
     license: BSD-3-Clause
     location:
-      githubOwner: "f-o-a-m"
+      githubOwner: "purescript-contrib"
       githubRepo: purescript-optparse
   test:
     dependencies: [ "quickcheck", "spec" ]

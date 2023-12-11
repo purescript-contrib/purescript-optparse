@@ -40,7 +40,7 @@ import Effect (Effect)
 import ExitCodes (ExitCode)
 import ExitCodes as ExitCode
 import Node.Encoding (Encoding(..))
-import Node.Process (argv, exit, stderr, stdout)
+import Node.Process (argv, exit', stderr, stdout)
 import Node.Stream as Stream
 import Options.Applicative.BashCompletion (bashCompletionParser)
 import Options.Applicative.Builder (abortOption, defaultPrefs, help, hidden, long, metavar, short)
@@ -61,10 +61,10 @@ getProgName = argv <#> \args -> fromMaybe "" do
   Array.last $ String.split (String.Pattern "/") executablePath
 
 exitSuccess :: forall t270. Effect t270
-exitSuccess = exit $ fromEnum ExitCode.Success
+exitSuccess = exit' $ fromEnum ExitCode.Success
 
 exitWith :: forall void. ExitCode -> Effect void
-exitWith c = exit $ fromEnum c
+exitWith c = exit' $ fromEnum c
 
 -- | A hidden "helper" option which always fails. Use this to
 -- | add the `--help` flag to your CLI parser
@@ -116,12 +116,12 @@ handleParseResult (Failure failure) = do
         stream = case exit of
           ExitCode.Success -> stdout
           _           -> stderr
-      void $ Stream.writeString stream UTF8 (msg <> "\n") mempty
+      void $ Stream.writeString stream UTF8 (msg <> "\n")
       exitWith exit
 handleParseResult (CompletionInvoked compl) = do
       progn <- getProgName
       msg <- (un CompletionResult compl).execCompletion progn
-      void $ Stream.writeString stdout UTF8 msg mempty
+      void $ Stream.writeString stdout UTF8 msg
       exitSuccess
 
 -- | Extract the actual result from a `ParserResult` value.

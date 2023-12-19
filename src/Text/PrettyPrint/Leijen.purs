@@ -694,11 +694,11 @@ flatAlt :: Doc -> Doc -> Doc
 flatAlt = FlatAlt
 
 flatten :: Doc -> Doc
-flatten (FlatAlt x y)    = y
+flatten (FlatAlt _ y)    = y
 flatten (Cat x y)        = Cat (flatten x) (flatten y)
 flatten (Nest i x)       = Nest i (flatten x)
 flatten  Line            = Fail
-flatten (Union x y)      = flatten x
+flatten (Union x _)      = flatten x
 flatten (Column f)       = Column (flatten <<< f)
 flatten (Columns f)      = Columns (flatten <<< f)
 flatten (Nesting f)      = Nesting (flatten <<< f)
@@ -783,7 +783,7 @@ renderFits fits rfrac w headNode
       --         k = current column
       --        (ie. (k >= n) && (k - n == count of inserted characters)
       best :: Int -> Int -> Docs -> LazySimpleDoc
-      best n k Nil = SEmpty'
+      best _ _ Nil = SEmpty'
       best n k (Cons i d ds)
         = case d of
             Fail          -> SFail'
@@ -817,12 +817,12 @@ renderFits fits rfrac w headNode
 
 -- | @fits1@ does 1 line lookahead.
 fits1 :: Int -> Int -> Int -> LazySimpleDoc -> Boolean
-fits1 _ _ w x        | w < 0          = false
-fits1 _ _ w SFail'                    = false
-fits1 _ _ w SEmpty'                   = true
-fits1 p m w (SChar' c x)              = fits1 p m (w - 1) (force x)
-fits1 p m w (SText' l s x)            = fits1 p m (w - l) (force x)
-fits1 _ _ w (SLine' i x)              = true
+fits1 _ _ w _        | w < 0          = false
+fits1 _ _ _ SFail'                    = false
+fits1 _ _ _ SEmpty'                   = true
+fits1 p m w (SChar' _ x)              = fits1 p m (w - 1) (force x)
+fits1 p m w (SText' l _ x)            = fits1 p m (w - l) (force x)
+fits1 _ _ _ (SLine' _ _)              = true
 
 -- | @fitsR@ has a little more lookahead: assuming that nesting roughly
 -- | corresponds to syntactic depth, @fitsR@ checks that not only the current line
@@ -835,12 +835,12 @@ fits1 _ _ w (SLine' i x)              = true
 -- | m = minimum nesting level to fit in
 -- | w = the width in which to fit the first line
 fitsR :: Int -> Int -> Int -> LazySimpleDoc -> Boolean
-fitsR p m w x            | w < 0      = false
-fitsR p m w SFail'                    = false
-fitsR p m w SEmpty'                   = true
-fitsR p m w (SChar' c x)              = fitsR p m (w - 1) (force x)
-fitsR p m w (SText' l s x)            = fitsR p m (w - l) (force x)
-fitsR p m w (SLine' i x) | m < i      = fitsR p m (p - i) (force x)
+fitsR _ _ w _            | w < 0      = false
+fitsR _ _ _ SFail'                    = false
+fitsR _ _ _ SEmpty'                   = true
+fitsR p m w (SChar' _ x)              = fitsR p m (w - 1) (force x)
+fitsR p m w (SText' l _ x)            = fitsR p m (w - l) (force x)
+fitsR p m _ (SLine' i x) | m < i      = fitsR p m (p - i) (force x)
                          | otherwise  = true
 
 -----------------------------------------------------------
@@ -859,7 +859,7 @@ renderCompact :: Doc -> SimpleDoc
 renderCompact
     = scan 0 <<< List.singleton
     where
-      scan k List.Nil     = SEmpty
+      scan _ List.Nil     = SEmpty
       scan k (d List.: ds) = case d of
                         Fail                    -> SFail
                         Empty                   -> scan k ds
@@ -868,8 +868,8 @@ renderCompact
                         FlatAlt x _             -> scan k (x List.: ds)
                         Line                    -> SLine 0 (scan 0 ds)
                         Cat x y                 -> scan k (x List.: y List.: ds)
-                        Nest j x                -> scan k (x List.: ds)
-                        Union x y               -> scan k (y List.: ds)
+                        Nest _ x                -> scan k (x List.: ds)
+                        Union _ y               -> scan k (y List.: ds)
                         Column f                -> scan k (f k List.: ds)
                         Columns f               -> scan k (f Nothing List.: ds)
                         Nesting f               -> scan k (f 0 List.:ds)
@@ -894,7 +894,7 @@ displayS :: SimpleDoc -> String
 displayS SFail              = unsafeCrashWith $ "@SFail@ can not appear uncaught in a rendered @SimpleDoc@"
 displayS SEmpty             = ""
 displayS (SChar c x)        = fromCharArray [c] <> displayS x
-displayS (SText l s x)      = s <> displayS x
+displayS (SText _ s x)      = s <> displayS x
 displayS (SLine i x)        = "\n" <> indentation i <> displayS x
 
 instance docShow :: Show Doc where

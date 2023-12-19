@@ -88,7 +88,7 @@ hsubparser :: forall a. Mod CommandFields a -> Parser a
 hsubparser m = mkParser d g rdr
   where
     Mod _ d g = metavar "COMMAND" `append` m
-    groupName /\ cmds /\ subs /\ unit = mkCommand m
+    groupName /\ cmds /\ subs /\ _ = mkCommand m
     rdr = CmdReader groupName cmds (map add_helper <<< subs)
     add_helper = over ParserInfo \pinfo -> pinfo
       { infoParser = pinfo.infoParser <**> helper}
@@ -299,5 +299,5 @@ parserFailure pprefs pinfo msg ctx = ParserFailure $ \progn ->
 
 renderFailure :: ParserFailure ParserHelp -> String -> Tuple String ExitCode
 renderFailure failure progn =
-  let h /\ exit /\ cols /\ unit = un ParserFailure failure progn
+  let h /\ exit /\ cols /\ _ = un ParserFailure failure progn
   in Tuple (renderHelp cols h) exit

@@ -272,7 +272,7 @@ subparser :: forall a. Mod CommandFields a -> Parser a
 subparser m = mkParser d g rdr
   where
     Mod _ d g = metavar "COMMAND" `append` m
-    groupName /\ cmds /\ subs /\ unit = mkCommand m
+    groupName /\ cmds /\ subs /\ _ = mkCommand m
     rdr = CmdReader groupName cmds subs
 
 -- | Builder for an argument parser.

@@ -22,26 +22,26 @@ import Data.String.Gen (genString)
 import Data.Tuple (Tuple(..), fst)
 import Data.Tuple.Nested (tuple3, (/\))
 import Effect (Effect)
-import Effect.Aff (Aff, error, launchAff_, throwError)
+import Effect.Aff (Aff, error, throwError)
 import Effect.Class (class MonadEffect, liftEffect)
-import Examples.Alternatives as Alternatives
-import Examples.Cabal as Cabal
-import Examples.Commands as Commands
-import Examples.Formatting as Formatting
-import Examples.Hello as Hello
 import ExitCodes (ExitCode)
 import ExitCodes as ExitCode
 import Options.Applicative (argument, briefDesc, columns, command, completeWith, defaultPrefs, disambiguate, execParserPure, flag', forwardOptions, header, help, (<**>), helper, hidden, info, int, long, metavar, noBacktrack, noIntersperse, option, prefs, progDesc, renderFailure, short, showDefault, showHelpOnEmpty, showHelpOnError, str, strArgument, strOption, subparser, subparserInline, switch, value)
 import Options.Applicative.Help (Chunk(..), editDistance, extractChunk, isEmpty, listToChunk, paragraph, stringChunk)
 import Options.Applicative.Internal.Utils (lines, words)
 import Options.Applicative.Types (CompletionResult(..), ParserFailure, ParserHelp, ParserInfo, ParserPrefs, ParserResult(..), ReadM, many, readerAsk, readerError, some, optional)
+import Test.Examples.Alternatives as Alternatives
+import Test.Examples.Cabal as Cabal
+import Test.Examples.Commands as Commands
+import Test.Examples.Formatting as Formatting
+import Test.Examples.Hello as Hello
 import Test.QuickCheck ((<?>), (===))
 import Test.QuickCheck as QC
 import Test.QuickCheck.Gen (Gen)
 import Test.Spec (Spec, describe, it)
 import Test.Spec.Assertions (fail)
 import Test.Spec.Reporter (consoleReporter)
-import Test.Spec.Runner as Spec
+import Test.Spec.Runner.Node (runSpecAndExitProcess) as Spec
 import Text.PrettyPrint.Leijen (Doc)
 import Text.PrettyPrint.Leijen as Doc
 
@@ -225,16 +225,14 @@ Available options:
 """
 
 asset_helponempty :: Asset
-asset_helponempty = mkAsset "helponempty" """
+asset_helponempty = mkAsset "helponempty" ("""
 Usage: helponempty B C
 
 Available options:
   -h,--help                Show this help text
 
-Available commands:
-  b                        
-  c                        
-"""
+Available commands:""" <> "\n  b                        " <> "\n  c                        ")
+
 
 asset_helponemptysub :: Asset
 asset_helponemptysub = mkAsset "helponemptysub" """
@@ -903,7 +901,7 @@ prop_edit_transposition = do
 ---
 
 main :: Effect Unit
-main = launchAff_ $ Spec.runSpec [consoleReporter] spec
+main = Spec.runSpecAndExitProcess [consoleReporter] spec
 
 quickCheckGen :: forall p. QC.Testable p => Gen p -> Aff Unit
 quickCheckGen = quickCheck' 100

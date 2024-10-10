@@ -1,4 +1,4 @@
-module Examples.Formatting where
+module Test.Examples.Formatting where
 
 import Prelude
 import Options.Applicative (Parser, help, int, long, metavar, option, short, value)

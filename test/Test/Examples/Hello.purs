@@ -1,4 +1,4 @@
-module Examples.Hello where
+module Test.Examples.Hello where
 
 import Prelude
 import Options.Applicative (Parser, ParserInfo, execParser, fullDesc, header, help, helper, info, int, long, metavar, option, progDesc, short, showDefault, strOption, switch, value, (<**>))

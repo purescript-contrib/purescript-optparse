@@ -1,4 +1,4 @@
-module Examples.Commands where
+module Test.Examples.Commands where
 
 import Prelude
 

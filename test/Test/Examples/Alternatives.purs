@@ -1,4 +1,4 @@
-module Examples.Alternatives where
+module Test.Examples.Alternatives where
 
 import Prelude
 

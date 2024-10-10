@@ -1,4 +1,4 @@
-module Examples.Cabal where
+module Test.Examples.Cabal where
 
 import Prelude
 

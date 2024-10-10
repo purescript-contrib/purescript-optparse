@@ -4,11 +4,5 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/f-o-a-m/purescript-optparse"
-  },
-  "ignore": [
-    "**/.*",
-    "node_modules",
-    "bower_components",
-    "output"
-  ]
+  }
 }

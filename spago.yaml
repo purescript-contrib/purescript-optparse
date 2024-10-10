@@ -4,7 +4,7 @@ package:
     license: BSD-3-Clause
     version: 6.0.0
     location:
-      githubOwner: purescript-contrib
+      githubOwner: f-o-a-m
       githubRepo: purescript-optparse
   dependencies:
     - arrays: ">=7.2.1 <8.0.0"

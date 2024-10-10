@@ -1,26 +1,28 @@
-module Options.Applicative.Builder.Internal (
-  -- * Internals
-  Mod(..),
-  class HasName, name,
-  class HasCompleter, modCompleter,
-  class HasValue, hasValueDummy,
-  class HasMetavar, hasMetavarDummy,
-  OptionFields(..),
-  FlagFields(..),
-  CommandFields(..),
-  ArgumentFields(..),
-  DefaultProp(..),
-
-  optionMod,
-  fieldMod,
-
-  baseProps,
-  mkCommand,
-  mkParser,
-  mkOption,
-  mkProps,
-
-  internal
+module Options.Applicative.Builder.Internal
+  (
+    -- * Internals
+    Mod(..)
+  , class HasName
+  , name
+  , class HasCompleter
+  , modCompleter
+  , class HasValue
+  , hasValueDummy
+  , class HasMetavar
+  , hasMetavarDummy
+  , OptionFields(..)
+  , FlagFields(..)
+  , CommandFields(..)
+  , ArgumentFields(..)
+  , DefaultProp(..)
+  , optionMod
+  , fieldMod
+  , baseProps
+  , mkCommand
+  , mkParser
+  , mkOption
+  , mkProps
+  , internal
   ) where
 
 import Prelude
@@ -37,61 +39,72 @@ newtype OptionFields :: forall k. k -> Type
 newtype OptionFields a = OptionFields
   { optNames :: Array OptName
   , optCompleter :: Completer
-  , optNoArgError :: String -> ParseError }
+  , optNoArgError :: String -> ParseError
+  }
+
 derive instance newtypeOptionFields :: Newtype (OptionFields a) _
 
 newtype FlagFields a = FlagFields
   { flagNames :: Array OptName
-  , flagActive :: a }
+  , flagActive :: a
+  }
+
 derive instance newtypeFlagFields :: Newtype (FlagFields a) _
 
 newtype CommandFields a = CommandFields
   { cmdCommands :: Array (Tuple String (ParserInfo a))
-  , cmdGroup :: Maybe String }
+  , cmdGroup :: Maybe String
+  }
+
 derive instance newtypeCommandFields :: Newtype (CommandFields a) _
 
 newtype ArgumentFields :: forall k. k -> Type
 newtype ArgumentFields a = ArgumentFields
   { argCompleter :: Completer }
+
 derive instance newtypeArgumentFields :: Newtype (ArgumentFields a) _
 
 class HasName :: forall k. (k -> Type) -> Constraint
 class HasName f where
   name :: forall a. OptName -> f a -> f a
 
-
 instance optionFieldsHasName :: HasName OptionFields where
-  name n = over OptionFields \fields -> fields{ optNames = [n] <> fields.optNames }
+  name n = over OptionFields \fields -> fields { optNames = [ n ] <> fields.optNames }
 
 instance flagFieldsHasName :: HasName FlagFields where
-  name n = over FlagFields \fields -> fields{ flagNames = [n] <> fields.flagNames }
+  name n = over FlagFields \fields -> fields { flagNames = [ n ] <> fields.flagNames }
 
 class HasCompleter :: forall k. (k -> Type) -> Constraint
 class HasCompleter f where
   modCompleter :: forall a. (Completer -> Completer) -> f a -> f a
 
 instance optionFieldsHasCompleter :: HasCompleter OptionFields where
-  modCompleter f = over OptionFields \p -> p{ optCompleter = f p.optCompleter }
+  modCompleter f = over OptionFields \p -> p { optCompleter = f p.optCompleter }
 
 instance argumentFieldsHasCompleter :: HasCompleter ArgumentFields where
-  modCompleter f = over ArgumentFields \p -> p{ argCompleter = f p.argCompleter }
+  modCompleter f = over ArgumentFields \p -> p { argCompleter = f p.argCompleter }
 
 class HasValue :: forall k. (k -> Type) -> Constraint
 class HasValue f where
   -- this is just so that it is not necessary to specify the kind of f
   hasValueDummy :: forall a. f a -> Unit
+
 instance optionFieldsHasValue :: HasValue OptionFields where
   hasValueDummy _ = unit
+
 instance argumentFieldsHasValue :: HasValue ArgumentFields where
   hasValueDummy _ = unit
 
 class HasMetavar :: forall k. (k -> Type) -> Constraint
 class HasMetavar f where
   hasMetavarDummy :: forall a. f a -> Unit
+
 instance optionFieldsHasMetavar :: HasMetavar OptionFields where
   hasMetavarDummy _ = unit
+
 instance argumentFieldsHasMetavar :: HasMetavar ArgumentFields where
   hasMetavarDummy _ = unit
+
 instance commandFieldsHasMetavar :: HasMetavar CommandFields where
   hasMetavarDummy _ = unit
 
@@ -138,8 +151,8 @@ instance defaultPropSemigroup :: Semigroup (DefaultProp a) where
 -- | For example, positional arguments can't be specified by long or short names,
 -- | so the 'HasName' constraint is used to ensure we have a flag or option.
 data Mod f a = Mod (f a -> f a)
-                   (DefaultProp a)
-                   (OptProperties -> OptProperties)
+  (DefaultProp a)
+  (OptProperties -> OptProperties)
 
 optionMod :: forall f a. (OptProperties -> OptProperties) -> Mod f a
 optionMod = Mod identity mempty
@@ -152,8 +165,7 @@ instance modMonoid :: Monoid (Mod f a) where
 
 -- | @since 0.13.0.0
 instance modSemigroup :: Semigroup (Mod f a) where
-  append (Mod f1 d1 g1) (Mod f2 d2 g2)
-    = Mod (f2 <<< f1) (d2 <> d1) (g2 <<< g1)
+  append (Mod f1 d1 g1) (Mod f2 d2 g2) = Mod (f2 <<< f1) (d2 <> d1) (g2 <<< g1)
 
 -- | Base default properties.
 baseProps :: OptProperties
@@ -168,31 +180,37 @@ baseProps = OptProperties
 mkCommand :: forall a. Mod CommandFields a -> Tuple3 (Maybe String) (Array String) (String -> Maybe (ParserInfo a))
 mkCommand m = group /\ map fst cmds /\ (_ `lookup` cmds) /\ unit
   where
-    Mod f _ _ = m
-    CommandFields {cmdCommands:cmds, cmdGroup:group} = f (CommandFields {cmdCommands: [], cmdGroup: Nothing})
+  Mod f _ _ = m
+  CommandFields { cmdCommands: cmds, cmdGroup: group } = f (CommandFields { cmdCommands: [], cmdGroup: Nothing })
 
-mkParser :: forall a. DefaultProp a
-         -> (OptProperties -> OptProperties)
-         -> OptReader a
-         -> Parser a
+mkParser
+  :: forall a
+   . DefaultProp a
+  -> (OptProperties -> OptProperties)
+  -> OptReader a
+  -> Parser a
 mkParser d@(DefaultProp def _) g rdr =
   let
     o = liftOpt $ mkOption d g rdr
   in
     maybe o (\a -> o `alt` pure a) def
 
-mkOption :: forall a. DefaultProp a
-         -> (OptProperties -> OptProperties)
-         -> OptReader a
-         -> Option a
+mkOption
+  :: forall a
+   . DefaultProp a
+  -> (OptProperties -> OptProperties)
+  -> OptReader a
+  -> Option a
 mkOption d g rdr = Option { optMain: rdr, optProps: mkProps d g }
 
-mkProps :: forall a. DefaultProp a
-        -> (OptProperties -> OptProperties)
-        -> OptProperties
+mkProps
+  :: forall a
+   . DefaultProp a
+  -> (OptProperties -> OptProperties)
+  -> OptProperties
 mkProps (DefaultProp def sdef) g = props
   where
-    props = over OptProperties (\r -> r { propShowDefault = sdef <*> def }) (g baseProps)
+  props = over OptProperties (\r -> r { propShowDefault = sdef <*> def }) (g baseProps)
 
 -- | Hide this option from the help text
 internal :: forall f a. Mod f a

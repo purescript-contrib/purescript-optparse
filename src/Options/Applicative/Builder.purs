@@ -1,22 +1,22 @@
-  -- * Parser builders
-  --
-  -- | This module contains utility functions and combinators to create parsers
-  -- | for individual options.
-  -- |
-  -- | Each parser builder takes an option modifier. A modifier can be created by
-  -- | composing the basic modifiers provided by this module using the 'Monoid'
-  -- | operations 'mempty' and 'append', or their aliases 'idm' and '<>'.
-  -- |
-  -- | For example:
-  -- |
-  -- | ```purescript
-  -- | out = strOption
-  -- |     ( long "output"
-  -- |    <> short 'o'
-  -- |    <> metavar "FILENAME" )
-  -- | ```
-  -- |
-  -- | creates a parser for an option called `output`.
+-- * Parser builders
+--
+-- | This module contains utility functions and combinators to create parsers
+-- | for individual options.
+-- |
+-- | Each parser builder takes an option modifier. A modifier can be created by
+-- | composing the basic modifiers provided by this module using the 'Monoid'
+-- | operations 'mempty' and 'append', or their aliases 'idm' and '<>'.
+-- |
+-- | For example:
+-- |
+-- | ```purescript
+-- | out = strOption
+-- |     ( long "output"
+-- |    <> short 'o'
+-- |    <> metavar "FILENAME" )
+-- | ```
+-- |
+-- | creates a parser for an option called `output`.
 module Options.Applicative.Builder
   ( subparser
   , strArgument
@@ -87,9 +87,8 @@ module Options.Applicative.Builder
   , defaultPrefs
 
   -- * Types
-  , module  Reexport
+  , module Reexport
   ) where
-
 
 import Prelude
 
@@ -145,7 +144,7 @@ eitherReader f = readerAsk >>= either readerError pure <<< f
 -- | Convert a function producing a 'Maybe' into a reader.
 maybeReader :: forall a. (String -> Maybe a) -> ReadM a
 maybeReader f = do
-  arg  <- readerAsk
+  arg <- readerAsk
   maybe (readerError $ "cannot parse value `" <> arg <> "'") pure <<< f $ arg
 
 -- | Null 'Option' reader. All arguments will fail validation.
@@ -215,7 +214,7 @@ hidden = optionMod $ over OptProperties \p ->
 -- | **NOTE**: This builder is more flexible than its name and example
 -- | allude. One of the motivating examples for its addition was to
 -- | used `const` to completely replace the usage text of an option.
-style :: forall f a. ( Doc -> Doc ) -> Mod f a
+style :: forall f a. (Doc -> Doc) -> Mod f a
 style x = optionMod $ over OptProperties \p ->
   p { propDescMod = Just x }
 
@@ -234,7 +233,7 @@ style x = optionMod $ over OptProperties \p ->
 -- | ```
 command :: forall a. String -> ParserInfo a -> Mod CommandFields a
 command cmd pinfo = fieldMod $ over CommandFields \p ->
-  p { cmdCommands = [Tuple cmd pinfo] <> p.cmdCommands }
+  p { cmdCommands = [ Tuple cmd pinfo ] <> p.cmdCommands }
 
 -- | Add a description to a group of commands.
 -- |
@@ -271,16 +270,16 @@ completer f = fieldMod $ modCompleter (_ `append` f)
 subparser :: forall a. Mod CommandFields a -> Parser a
 subparser m = mkParser d g rdr
   where
-    Mod _ d g = metavar "COMMAND" `append` m
-    groupName /\ cmds /\ subs /\ _ = mkCommand m
-    rdr = CmdReader groupName cmds subs
+  Mod _ d g = metavar "COMMAND" `append` m
+  groupName /\ cmds /\ subs /\ _ = mkCommand m
+  rdr = CmdReader groupName cmds subs
 
 -- | Builder for an argument parser.
 argument :: forall a. ReadM a -> Mod ArgumentFields a -> Parser a
 argument p (Mod f d g) = mkParser d g (ArgReader rdr)
   where
-    ArgumentFields compl = f (ArgumentFields mempty)
-    rdr = CReader {crCompleter: compl.argCompleter, crReader: p}
+  ArgumentFields compl = f (ArgumentFields mempty)
+  rdr = CReader { crCompleter: compl.argCompleter, crReader: p }
 
 -- | Builder for a 'String' argument.
 strArgument :: Mod ArgumentFields String -> Parser String
@@ -294,11 +293,12 @@ strArgument = argument str
 -- | **Note**: Because this parser will never fail, it can not be used with
 -- | combinators such as 'some' or 'many', as these combinators continue until
 -- | a failure occurs. See @flag'@.
-flag :: forall a
-      . a                         -- ^ default value
-     -> a                         -- ^ active value
-     -> Mod FlagFields a          -- ^ option modifier
-     -> Parser a
+flag
+  :: forall a
+   . a -- ^ default value
+  -> a -- ^ active value
+  -> Mod FlagFields a -- ^ option modifier
+  -> Parser a
 flag defv actv m = flag' actv m <|> pure defv
 
 -- | Builder for a flag parser without a default value.
@@ -316,15 +316,19 @@ flag defv actv m = flag' actv m <|> pure defv
 -- | > flag' true (long "on") <|> flag' false (long "off")
 -- |
 -- | will require the user to enter '--on' or '--off' on the command line.
-flag' :: forall a
-       . a                         -- ^ active value
-      -> Mod FlagFields a          -- ^ option modifier
-      -> Parser a
+flag'
+  :: forall a
+   . a -- ^ active value
+  -> Mod FlagFields a -- ^ option modifier
+  -> Parser a
 flag' actv (Mod f d g) = mkParser d g rdr
   where
-    rdr = let (FlagFields fields) = f (FlagFields {flagNames: [], flagActive: actv})
-          in FlagReader (fields.flagNames)
-                        (fields.flagActive)
+  rdr =
+    let
+      (FlagFields fields) = f (FlagFields { flagNames: [], flagActive: actv })
+    in
+      FlagReader (fields.flagNames)
+        (fields.flagActive)
 
 -- | Builder for a boolean flag.
 -- |
@@ -345,7 +349,8 @@ abortOption :: forall a. ParseError -> Mod OptionFields (a -> a) -> Parser (a ->
 abortOption err m = option (readerAbort err) <<< (_ `append` m) $ fold
   [ noArgError err
   , value identity
-  , metavar "" ]
+  , metavar ""
+  ]
 
 -- | An option that always fails and displays a message.
 infoOption :: forall a. String -> Mod OptionFields (a -> a) -> Parser (a -> a)
@@ -354,7 +359,6 @@ infoOption = abortOption <<< InfoMsg
 -- | Builder for an option taking a 'String' argument.
 strOption :: Mod OptionFields String -> Parser String
 strOption = option str
-
 
 -- | Builder for an option using the given reader.
 -- |
@@ -365,13 +369,14 @@ strOption = option str
 option :: forall a. ReadM a -> Mod OptionFields a -> Parser a
 option r m = mkParser d g rdr
   where
-    Mod f d g = metavar "ARG" `append` m
-    (OptionFields fields) = f (OptionFields {optNames: [], optCompleter: mempty, optNoArgError: ExpectsArgError})
-    crdr = CReader {crCompleter: fields.optCompleter, crReader: r}
-    rdr = OptReader fields.optNames crdr fields.optNoArgError
+  Mod f d g = metavar "ARG" `append` m
+  (OptionFields fields) = f (OptionFields { optNames: [], optCompleter: mempty, optNoArgError: ExpectsArgError })
+  crdr = CReader { crCompleter: fields.optCompleter, crReader: r }
+  rdr = OptReader fields.optNames crdr fields.optNoArgError
 
 -- | Modifier for 'ParserInfo'.
 newtype InfoMod a = InfoMod (ParserInfo a -> ParserInfo a)
+
 derive instance newtypeInfoMod :: Newtype (InfoMod a) _
 
 instance infoModMonoid :: Monoid (InfoMod a) where
@@ -444,16 +449,18 @@ forwardOptions = InfoMod $ over ParserInfo \p -> p { infoPolicy = ForwardOptions
 info :: forall a. Parser a -> InfoMod a -> ParserInfo a
 info parser m = un InfoMod m base
   where
-    base = ParserInfo
-      { infoParser: parser
-      , infoFullDesc: true
-      , infoProgDesc: mempty
-      , infoHeader: mempty
-      , infoFooter: mempty
-      , infoFailureCode: ExitCode.Error
-      , infoPolicy: Intersperse }
+  base = ParserInfo
+    { infoParser: parser
+    , infoFullDesc: true
+    , infoProgDesc: mempty
+    , infoHeader: mempty
+    , infoFooter: mempty
+    , infoFailureCode: ExitCode.Error
+    , infoPolicy: Intersperse
+    }
 
 newtype PrefsMod = PrefsMod (ParserPrefs -> ParserPrefs)
+
 derive instance newtypePrefsMod :: Newtype PrefsMod _
 
 instance prefsModMonoid :: Monoid PrefsMod where
@@ -506,13 +513,14 @@ columns cols = PrefsMod $ over ParserPrefs \p -> p { prefColumns = cols }
 prefs :: PrefsMod -> ParserPrefs
 prefs m = un PrefsMod m base
   where
-    base = ParserPrefs
-      { prefMultiSuffix: ""
-      , prefDisambiguate: false
-      , prefShowHelpOnError: false
-      , prefShowHelpOnEmpty: false
-      , prefBacktrack: Backtrack
-      , prefColumns: 80 }
+  base = ParserPrefs
+    { prefMultiSuffix: ""
+    , prefDisambiguate: false
+    , prefShowHelpOnError: false
+    , prefShowHelpOnEmpty: false
+    , prefBacktrack: Backtrack
+    , prefColumns: 80
+    }
 
 -- Convenience shortcuts
 

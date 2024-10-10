@@ -1,5 +1,5 @@
-module Options.Applicative.Help.Types (
-    ParserHelp (..)
+module Options.Applicative.Help.Types
+  ( ParserHelp(..)
   , renderHelp
   ) where
 
@@ -17,9 +17,11 @@ newtype ParserHelp = ParserHelp
   , helpBody :: Chunk Doc
   , helpFooter :: Chunk Doc
   }
+
 derive instance newtypeParserHelp :: Newtype ParserHelp _
 instance parserHelpShow :: Show ParserHelp where
   show = show <<< renderHelp 80
+
 derive newtype instance parserHelpSemigroup :: Semigroup ParserHelp
 derive newtype instance parserHelpMonoid :: Monoid ParserHelp
 
@@ -35,7 +37,6 @@ helpText (ParserHelp h) = extractChunk $ vsepChunks
 
 -- | Convert a help text to 'String'.
 renderHelp :: Int -> ParserHelp -> String
-renderHelp cols
-  = displayS
+renderHelp cols = displayS
   <<< renderPretty 1.0 cols
   <<< helpText

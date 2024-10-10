@@ -28,12 +28,14 @@ import Data.Tuple (Tuple(..))
 import Options.Applicative.Help.Pretty (Doc, fillBreak, indent, text, vcat, (.$.), (<+>), (</>))
 import Options.Applicative.Internal.Utils (words)
 
-
 -- | The free monoid on a semigroup 'a'.
 newtype Chunk a = Chunk (Maybe a)
+
 derive instance chunkNewtype :: Newtype (Chunk a) _
 derive instance chunkGeneric :: Generic (Chunk a) _
-instance chunkShow :: Show a => Show (Chunk a) where show = genericShow
+instance chunkShow :: Show a => Show (Chunk a) where
+  show = genericShow
+
 derive newtype instance chunkEq :: Eq a => Eq (Chunk a)
 derive newtype instance chunkOrd :: Ord a => Ord (Chunk a)
 derive newtype instance chunkFunctor :: Functor Chunk
@@ -54,8 +56,12 @@ instance chunkMonoid :: Semigroup a => Monoid (Chunk a) where
 -- | Given a semigroup structure on 'a', return a monoid structure on 'Chunk a'.
 --
 -- Note that this is /not/ the same as 'liftA2'.
-chunked :: forall a. (a -> a -> a)
-        -> Chunk a -> Chunk a -> Chunk a
+chunked
+  :: forall a
+   . (a -> a -> a)
+  -> Chunk a
+  -> Chunk a
+  -> Chunk a
 chunked _ (Chunk Nothing) y = y
 chunked _ x (Chunk Nothing) = x
 chunked f (Chunk (Just x)) (Chunk (Just y)) = Chunk (Just (f x y))
@@ -77,6 +83,7 @@ listToChunk xs = pure (fold xs)
 -- > extractChunk <<< fmap pure = id
 extractChunk :: forall a. Monoid a => Chunk a -> a
 extractChunk = fromMaybe mempty <<< un Chunk
+
 -- we could also define:
 -- duplicate :: Monoid a => Chunk a -> Chunk (Chunk a)
 -- duplicate = fmap pure
@@ -88,6 +95,7 @@ extractChunk = fromMaybe mempty <<< un Chunk
 -- 'Chunk'.
 chunkBeside :: Chunk Doc -> Chunk Doc -> Chunk Doc
 chunkBeside = chunked (<+>)
+
 infixr 6 chunkBeside as <<+>>
 
 -- NOTE `<+>` from haskell corresponds to `<+>` (aka `beside`)from ps
@@ -131,8 +139,7 @@ stringChunk s = pure (text s)
 -- > isEmpty <<< paragraph = null <<< words
 paragraph :: String -> Chunk Doc
 paragraph = foldr (chunked (</>) <<< stringChunk) mempty
-          <<< words
-
+  <<< words
 
 tabulate' :: Int -> Array (Tuple Doc Doc) -> Chunk Doc
 tabulate' _ [] = mempty

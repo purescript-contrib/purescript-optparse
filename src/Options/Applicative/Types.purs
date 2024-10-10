@@ -1,45 +1,42 @@
-
-module Options.Applicative.Types (
-  ParseError(..),
-  ParserInfo(..),
-  ParserPrefs(..),
-
-  Option(..),
-  OptName(..),
-  OptReader(..),
-  OptProperties(..),
-  OptVisibility(..),
-  Backtracking(..),
-  ReadM(..),
-  readerAsk,
-  readerAbort,
-  readerError,
-  CReader(..),
-  Parser(..),
-  MultPE(..),
-  Completer(..),
-  mkCompleter,
-  CompletionResult(..),
-  ParserFailure(..),
-  ParserResult(..),
-  overFailure,
-  Args,
-  ArgPolicy(..),
-  OptHelpInfo(..),
-  OptTree(..),
-  module Reexport,
-  SomeParser(..),
-  Context(..),
-  IsCmdStart(..),
-
-  optVisibility,
-  optMetaVar,
-  optHelp,
-  optShowDefault,
-  optDescMod,
-  many,
-  some,
-  optional
+module Options.Applicative.Types
+  ( ParseError(..)
+  , ParserInfo(..)
+  , ParserPrefs(..)
+  , Option(..)
+  , OptName(..)
+  , OptReader(..)
+  , OptProperties(..)
+  , OptVisibility(..)
+  , Backtracking(..)
+  , ReadM(..)
+  , readerAsk
+  , readerAbort
+  , readerError
+  , CReader(..)
+  , Parser(..)
+  , MultPE(..)
+  , Completer(..)
+  , mkCompleter
+  , CompletionResult(..)
+  , ParserFailure(..)
+  , ParserResult(..)
+  , overFailure
+  , Args
+  , ArgPolicy(..)
+  , OptHelpInfo(..)
+  , OptTree(..)
+  , module Reexport
+  , SomeParser(..)
+  , Context(..)
+  , IsCmdStart(..)
+  , optVisibility
+  , optMetaVar
+  , optHelp
+  , optShowDefault
+  , optDescMod
+  , many
+  , some
+  , optional
   ) where
 
 import Prelude
@@ -69,7 +66,6 @@ import Options.Applicative.Help.Pretty (Doc)
 import Options.Applicative.Help.Types (ParserHelp(..)) as Reexport
 import Options.Applicative.Help.Types (ParserHelp)
 
-
 data ParseError
   = ErrorMsg String
   | InfoMsg String
@@ -79,12 +75,13 @@ data ParseError
   | UnexpectedError String SomeParser
 
 derive instance isCmdStartGeneric :: Generic IsCmdStart _
-instance isCmdStartShow :: Show IsCmdStart where show = genericShow
+instance isCmdStartShow :: Show IsCmdStart where
+  show = genericShow
+
 data IsCmdStart = CmdStart | CmdCont
 
 instance parseErrorSemigroup :: Semigroup ParseError where
   append _ m = m
-
 
 -- | A 'ParserInfo' describes a command line program, used to generate a help
 -- | screen. Two help modes are supported: brief and full. In brief mode, only
@@ -95,15 +92,15 @@ instance parseErrorSemigroup :: Semigroup ParseError where
 -- | the 'info' function.
 -- A full description for a runnable 'Parser' for a program.
 newtype ParserInfo a = ParserInfo
-  { infoParser :: Parser a    -- ^ the option parser for the program
-  , infoFullDesc :: Boolean      -- ^ whether the help text should contain full
-                              -- documentation
+  { infoParser :: Parser a -- ^ the option parser for the program
+  , infoFullDesc :: Boolean -- ^ whether the help text should contain full
+  -- documentation
   , infoProgDesc :: Chunk Doc -- ^ brief parser description
-  , infoHeader :: Chunk Doc   -- ^ header of the full parser description
-  , infoFooter :: Chunk Doc   -- ^ footer of the full parser description
-  , infoFailureCode :: ExitCode    -- ^ exit code for a parser failure
-  , infoPolicy :: ArgPolicy   -- ^ allow regular options and flags to occur
-                              -- after arguments (default: InterspersePolicy)
+  , infoHeader :: Chunk Doc -- ^ header of the full parser description
+  , infoFooter :: Chunk Doc -- ^ footer of the full parser description
+  , infoFailureCode :: ExitCode -- ^ exit code for a parser failure
+  , infoPolicy :: ArgPolicy -- ^ allow regular options and flags to occur
+  -- after arguments (default: InterspersePolicy)
   }
 
 derive instance parserInfoNewtype :: Newtype (ParserInfo a) _
@@ -117,73 +114,81 @@ data Backtracking
 
 derive instance backtrackingEq :: Eq Backtracking
 derive instance backtrackingGeneric :: Generic Backtracking _
-instance backtrackingShow :: Show Backtracking where show = genericShow
+instance backtrackingShow :: Show Backtracking where
+  show = genericShow
 
 -- | Global preferences for a top-level 'Parser'.
 -- | A 'ParserPrefs' contains general preferences for all command-line
 -- | options, and can be built with the 'prefs' function.
 newtype ParserPrefs = ParserPrefs
-  { prefMultiSuffix :: String     -- ^ metavar suffix for multiple options
-  , prefDisambiguate :: Boolean      -- ^ automatically disambiguate abbreviations
-                                  -- (default: false)
-  , prefShowHelpOnError :: Boolean   -- ^ always show help text on parse errors
-                                  -- (default: false)
-  , prefShowHelpOnEmpty :: Boolean   -- ^ show the help text for a command or subcommand
-                                  -- if it fails with no input (default: false)
+  { prefMultiSuffix :: String -- ^ metavar suffix for multiple options
+  , prefDisambiguate :: Boolean -- ^ automatically disambiguate abbreviations
+  -- (default: false)
+  , prefShowHelpOnError :: Boolean -- ^ always show help text on parse errors
+  -- (default: false)
+  , prefShowHelpOnEmpty :: Boolean -- ^ show the help text for a command or subcommand
+  -- if it fails with no input (default: false)
   , prefBacktrack :: Backtracking -- ^ backtrack to parent parser when a
-                                  -- subcommand fails (default: Backtrack)
-  , prefColumns :: Int            -- ^ number of columns in the terminal, used to
-                                  -- format the help page (default: 80)
+  -- subcommand fails (default: Backtrack)
+  , prefColumns :: Int -- ^ number of columns in the terminal, used to
+  -- format the help page (default: 80)
   }
+
 derive instance parserPrefsNewtype :: Newtype ParserPrefs _
 derive instance parserPrefsEq :: Eq ParserPrefs
 derive instance parserPrefsGeneric :: Generic ParserPrefs _
-instance parserPrefsShow :: Show ParserPrefs where show = genericShow
+instance parserPrefsShow :: Show ParserPrefs where
+  show = genericShow
 
-
-data OptName = OptShort Char
-             | OptLong String
+data OptName
+  = OptShort Char
+  | OptLong String
 
 derive instance optNameEq :: Eq OptName
 derive instance optNameOrd :: Ord OptName
 derive instance optNameGeneric :: Generic OptName _
-instance optNameShow :: Show OptName where show = genericShow
-
+instance optNameShow :: Show OptName where
+  show = genericShow
 
 -- | Visibility of an option in the help text.
 data OptVisibility
-  = Internal          -- ^ does not appear in the help text at all
-  | Hidden            -- ^ only visible in the full description
-  | Visible           -- ^ visible both in the full and brief descriptions
+  = Internal -- ^ does not appear in the help text at all
+  | Hidden -- ^ only visible in the full description
+  | Visible -- ^ visible both in the full and brief descriptions
 
 derive instance optVisibilityEq :: Eq OptVisibility
 derive instance optVisibilityOrd :: Ord OptVisibility
 derive instance optVisibilityGeneric :: Generic OptVisibility _
-instance optVisibilityShow :: Show OptVisibility where show = genericShow
+instance optVisibilityShow :: Show OptVisibility where
+  show = genericShow
 
 -- | Specification for an individual parser option.
 newtype OptProperties = OptProperties
-  { propVisibility :: OptVisibility       -- ^ whether this flag is shown in the brief description
-  , propHelp :: Chunk Doc                 -- ^ help text for this option
-  , propMetaVar :: String                 -- ^ metavariable for this option
-  , propShowDefault :: Maybe String       -- ^ what to show in the help text as the default
-  , propDescMod :: Maybe ( Doc -> Doc )   -- ^ a function to run over the brief description
+  { propVisibility :: OptVisibility -- ^ whether this flag is shown in the brief description
+  , propHelp :: Chunk Doc -- ^ help text for this option
+  , propMetaVar :: String -- ^ metavariable for this option
+  , propShowDefault :: Maybe String -- ^ what to show in the help text as the default
+  , propDescMod :: Maybe (Doc -> Doc) -- ^ a function to run over the brief description
   }
+
 derive instance optPropertiesNewtype :: Newtype OptProperties _
 instance optPropertiesShow :: Show OptProperties where
-  show (OptProperties r) = "(OptProperties " <> show
-    { propVisibility: r.propVisibility
-    , propHelp: r.propHelp
-    , propMetaVar: r.propMetaVar
-    , propShowDefault: r.propShowDefault
-    , propDescMod: map (const "<func>") r.propDescMod
-    } <> ")"
+  show (OptProperties r) = "(OptProperties "
+    <> show
+      { propVisibility: r.propVisibility
+      , propHelp: r.propHelp
+      , propMetaVar: r.propMetaVar
+      , propShowDefault: r.propShowDefault
+      , propDescMod: map (const "<func>") r.propDescMod
+      }
+    <> ")"
 
 -- | A single option of a parser.
 newtype Option a = Option
-  { optMain :: OptReader a               -- ^ reader for this option
-  , optProps :: OptProperties            -- ^ properties of this option
+  { optMain :: OptReader a -- ^ reader for this option
+  , optProps :: OptProperties -- ^ properties of this option
   }
+
 derive instance optionNewtype :: Newtype (Option a) _
 data SomeParser = SomeParser (Exists Parser)
 
@@ -192,10 +197,10 @@ data SomeParser = SomeParser (Exists Parser)
 data Context = Context String (Exists ParserInfo)
 
 instance optionShow :: Show (Option a) where
-  show (Option opt) = "(Option " <> show {optProps: opt.optProps, optMain: "<OptReader>"} <> ")"
+  show (Option opt) = "(Option " <> show { optProps: opt.optProps, optMain: "<OptReader>" } <> ")"
 
 instance optionFunctor :: Functor Option where
-  map f  = over Option \o -> o{optMain = map f o.optMain}
+  map f = over Option \o -> o { optMain = map f o.optMain }
 
 -- | A reader is used by the 'option' and 'argument' builders to parse
 -- | the data passed by the user on the command line into a data type.
@@ -244,11 +249,12 @@ readerError = readerAbort <<< ErrorMsg
 
 newtype CReader a = CReader
   { crCompleter :: Completer
-  , crReader :: ReadM a }
+  , crReader :: ReadM a
+  }
 
 derive instance newtypeCReader :: Newtype (CReader a) _
 instance cReaderFunctor :: Functor CReader where
-  map f = over CReader \r -> r {crReader = map f r.crReader}
+  map f = over CReader \r -> r { crReader = map f r.crReader }
 
 -- | An 'OptReader' defines whether an option matches an command line argument.
 data OptReader a
@@ -259,14 +265,14 @@ data OptReader a
   | ArgReader (CReader a)
   -- ^ argument reader
   | CmdReader (Maybe String) (Array String) (String -> Maybe (ParserInfo a))
-  -- ^ command reader
+
+-- ^ command reader
 
 instance optReaderFunctor :: Functor OptReader where
   map f (OptReader ns cr e) = OptReader ns (map f cr) e
   map f (FlagReader ns x) = FlagReader ns (f x)
   map f (ArgReader cr) = ArgReader (map f cr)
   map f (CmdReader n cs g) = CmdReader n cs ((map <<< map) f <<< g)
-
 
 -- * Option Parsers
 -- |
@@ -413,7 +419,9 @@ optional a = map Just a <|> pure Nothing
 -- | The 'action' and 'completeWith' builders are also provided for
 -- | convenience, to use 'bashCompleter' and 'listCompleter' as a 'Mod'.
 newtype Completer = Completer (String -> Effect (Array String))
+
 derive instance newtypeCompleter :: Newtype Completer _
+
 -- | Smart constructor for a 'Completer'
 mkCompleter :: (String -> Effect (Array String)) -> Completer
 mkCompleter = Completer
@@ -441,24 +449,31 @@ instance parserFailureShow :: Show (ParserFailure h) where
 
 instance parserFailureFunctor :: Functor ParserFailure where
   map f (ParserFailure err) = ParserFailure $ \progn ->
-    let  h /\ exit /\ cols /\ unit = err progn
-    in f h /\ exit /\ cols /\ unit
+    let
+      h /\ exit /\ cols /\ unit = err progn
+    in
+      f h /\ exit /\ cols /\ unit
 
 -- | Result of 'execParserPure'.
 data ParserResult a
   = Success a
   | Failure (ParserFailure ParserHelp)
   | CompletionInvoked CompletionResult
+
 derive instance parserResultGeneric :: Generic (ParserResult a) _
-instance parserResultShow :: Show a => Show (ParserResult a) where show = genericShow
+instance parserResultShow :: Show a => Show (ParserResult a) where
+  show = genericShow
 
 instance parserResultFunctor :: Functor ParserResult where
   map f (Success a) = Success (f a)
   map _ (Failure f) = Failure f
   map _ (CompletionInvoked c) = CompletionInvoked c
 
-overFailure :: forall a. (ParserHelp -> ParserHelp)
-            -> ParserResult a -> ParserResult a
+overFailure
+  :: forall a
+   . (ParserHelp -> ParserHelp)
+  -> ParserResult a
+  -> ParserResult a
 overFailure f (Failure failure) = Failure $ map f failure
 overFailure _ r = r
 
@@ -497,29 +512,31 @@ data ArgPolicy
   --   treated as positionals.
   --   Is the policy used after `--` is encountered.
   | ForwardOptions
-  -- ^ Options and arguments can be interspersed, but if
-  --   a given option is not found, it is treated as a
-  --   positional argument. This is sometimes useful if
-  --   one is passing through most options to another tool,
-  --   but are supplying just a few of their own options.
+
+-- ^ Options and arguments can be interspersed, but if
+--   a given option is not found, it is treated as a
+--   positional argument. This is sometimes useful if
+--   one is passing through most options to another tool,
+--   but are supplying just a few of their own options.
 
 derive instance argPolicyEq :: Eq ArgPolicy
 derive instance argPolicyOrd :: Ord ArgPolicy
 derive instance argPolicyGeneric :: Generic ArgPolicy _
-instance argPolicyShow :: Show ArgPolicy where show = genericShow
-
+instance argPolicyShow :: Show ArgPolicy where
+  show = genericShow
 
 newtype OptHelpInfo = OptHelpInfo
-  { hinfoMulti :: Boolean    -- ^ Whether this is part of a many or some (approximately)
-  , hinfoDefault :: Boolean  -- ^ Whether this option has a default value
+  { hinfoMulti :: Boolean -- ^ Whether this is part of a many or some (approximately)
+  , hinfoDefault :: Boolean -- ^ Whether this option has a default value
   , hinfoUnreachableArgs :: Boolean -- ^ If the result is a positional, if it can't be
-                                 --   accessed in the current parser position ( first arg )
+  --   accessed in the current parser position ( first arg )
   }
+
 derive instance newtypeOptHelpInfo :: Newtype OptHelpInfo _
 derive instance optHelpInfoEq :: Eq OptHelpInfo
 derive instance optHelpInfoGeneric :: Generic OptHelpInfo _
-instance optHelpInfoShow :: Show OptHelpInfo where show = genericShow
-
+instance optHelpInfoShow :: Show OptHelpInfo where
+  show = genericShow
 
 data OptTree a
   = Leaf a
@@ -527,13 +544,14 @@ data OptTree a
   | AltNode (Array (OptTree a))
 
 derive instance optTreeGeneric :: Generic (OptTree a) _
-instance optTreeShow :: Show a => Show (OptTree a) where show = genericShow
+instance optTreeShow :: Show a => Show (OptTree a) where
+  show = genericShow
 
 optVisibility :: forall a. Option a -> OptVisibility
 optVisibility = _.propVisibility <<< un OptProperties <<< _.optProps <<< un Option
 
 optHelp :: forall a. Option a -> Chunk Doc
-optHelp  = _.propHelp <<< un OptProperties <<< _.optProps <<< un Option
+optHelp = _.propHelp <<< un OptProperties <<< _.optProps <<< un Option
 
 optMetaVar :: forall a. Option a -> String
 optMetaVar = _.propMetaVar <<< un OptProperties <<< _.optProps <<< un Option
@@ -541,5 +559,5 @@ optMetaVar = _.propMetaVar <<< un OptProperties <<< _.optProps <<< un Option
 optShowDefault :: forall a. Option a -> Maybe String
 optShowDefault = _.propShowDefault <<< un OptProperties <<< _.optProps <<< un Option
 
-optDescMod :: forall a. Option a -> Maybe ( Doc -> Doc )
+optDescMod :: forall a. Option a -> Maybe (Doc -> Doc)
 optDescMod = _.propDescMod <<< un OptProperties <<< _.optProps <<< un Option

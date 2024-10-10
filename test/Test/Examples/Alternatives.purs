@@ -15,7 +15,8 @@ data Value = A | B
 
 derive instance valueEq :: Eq Value
 derive instance genericValue :: Generic Value _
-instance showValue :: Show Value where show = genericShow
+instance showValue :: Show Value where
+  show = genericShow
 
 values :: Parser (Array Value)
 values = map Array.fromFoldable $ many $ a <|> b

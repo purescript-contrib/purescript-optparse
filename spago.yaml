@@ -43,7 +43,4 @@ package:
       - spec
       - spec-node
     main: Test.Main
-workspace:
-  extraPackages: {}
-  packageSet:
-    registry: 60.5.0
+workspace: {}

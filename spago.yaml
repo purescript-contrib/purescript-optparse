@@ -2,7 +2,7 @@ package:
   name: optparse
   publish:
     license: BSD-3-Clause
-    version: 6.0.0
+    version: 7.0.0
     location:
       githubOwner: f-o-a-m
       githubRepo: purescript-optparse

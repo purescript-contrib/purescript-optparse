@@ -19,6 +19,7 @@ import Effect (Effect)
 import Options.Applicative.Internal.Utils (lines, startsWith, unWords)
 import Options.Applicative.Types (Completer(..))
 import Options.Applicative.Types (Completer, mkCompleter) as Reexport
+
 -- import System.Process (readProcess)
 
 -- | Create a 'Completer' from an IO action
@@ -39,7 +40,7 @@ listCompleter = listIOCompleter <<< pure
 -- for a complete list.
 bashCompleter :: String -> Completer
 bashCompleter action = Completer $ \word -> do
-  let cmd = unWords ["compgen", "-A", action, "--", requote word]
+  let cmd = unWords [ "compgen", "-A", action, "--", requote word ]
   result <- try $ execSyncCommand $ "bash -c " <> cmd
   pure <<< lines <<< either (const "") identity $ result
 
@@ -70,66 +71,63 @@ requote = toCharArray >>> List.fromFoldable >>> go' >>> List.toUnfoldable >>> fr
           ('\'' List.: rs) -> unescapeN rs
 
           -- We're weakly quoted.
-          ('"' List.: rs)  -> unescapeD rs
+          ('"' List.: rs) -> unescapeD rs
 
           -- We're not quoted at all.
           -- We need to unescape some characters like
           -- spaces and quotation marks.
-          elsewise   -> unescapeU elsewise
+          elsewise -> unescapeU elsewise
     in
       strong unescaped
 
     where
-      strong :: List.List Char -> List.List Char
-      strong ss = '\'' List.: foldr go (List.singleton '\'') ss
-        where
-          -- If there's a single quote inside the
-          -- command: exit from the strong quote and
-          -- emit it the quote escaped, then resume.
-          go '\'' t = '\'' List.: '\\' List.: '\'' List.: t
-          go h t    = h List.: t
+    strong :: List.List Char -> List.List Char
+    strong ss = '\'' List.: foldr go (List.singleton '\'') ss
+      where
+      -- If there's a single quote inside the
+      -- command: exit from the strong quote and
+      -- emit it the quote escaped, then resume.
+      go '\'' t = '\'' List.: '\\' List.: '\'' List.: t
+      go h t = h List.: t
 
-      -- Unescape a strongly quoted string
-      -- We have two recursive functions, as we
-      -- can enter and exit the strong escaping.
-      unescapeN :: List.List Char -> List.List Char
-      unescapeN = goX
-        where
-          goX ('\'' List.: xs) = goN xs
-          goX (x List.: xs) = x List.: goX xs
-          goX List.Nil = List.Nil
+    -- Unescape a strongly quoted string
+    -- We have two recursive functions, as we
+    -- can enter and exit the strong escaping.
+    unescapeN :: List.List Char -> List.List Char
+    unescapeN = goX
+      where
+      goX ('\'' List.: xs) = goN xs
+      goX (x List.: xs) = x List.: goX xs
+      goX List.Nil = List.Nil
 
-          goN ('\\' List.: '\'' List.: xs) = '\'' List.: goN xs
-          goN ('\'' List.: xs) = goX xs
-          goN (x List.: xs) = x List.: goN xs
-          goN List.Nil = List.Nil
+      goN ('\\' List.: '\'' List.: xs) = '\'' List.: goN xs
+      goN ('\'' List.: xs) = goX xs
+      goN (x List.: xs) = x List.: goN xs
+      goN List.Nil = List.Nil
 
-      -- Unescape an unquoted string
-      unescapeU :: List.List Char -> List.List Char
-      unescapeU = goX
-        where
-          goX List.Nil = List.Nil
-          goX ('\\' List.: x List.: xs) = x List.: goX xs
-          goX (x List.: xs) = x List.: goX xs
+    -- Unescape an unquoted string
+    unescapeU :: List.List Char -> List.List Char
+    unescapeU = goX
+      where
+      goX List.Nil = List.Nil
+      goX ('\\' List.: x List.: xs) = x List.: goX xs
+      goX (x List.: xs) = x List.: goX xs
 
-      -- Unescape a weakly quoted string
-      unescapeD :: List.List Char -> List.List Char
-      unescapeD = goX
-        where
-          -- Reached an escape character
-          goX ('\\' List.: x List.: xs)
-            -- If it's true escapable, strip the
-            -- slashes, as we're going to strong
-            -- escape instead.
-            | x `elem` ['$', '`', '\"', '\\', '\n'] = x List.: goX xs
-            | otherwise = '\\' List.: x List.: goX xs
-          -- We've ended quoted section, so we
-          -- don't recurse on goX, it's done.
-          goX ('"' List.: xs)
-            = xs
-          -- Not done, but not a special character
-          -- just continue the fold.
-          goX (x List.: xs)
-            = x List.: goX xs
-          goX List.Nil
-            = List.Nil
+    -- Unescape a weakly quoted string
+    unescapeD :: List.List Char -> List.List Char
+    unescapeD = goX
+      where
+      -- Reached an escape character
+      goX ('\\' List.: x List.: xs)
+        -- If it's true escapable, strip the
+        -- slashes, as we're going to strong
+        -- escape instead.
+        | x `elem` [ '$', '`', '\"', '\\', '\n' ] = x List.: goX xs
+        | otherwise = '\\' List.: x List.: goX xs
+      -- We've ended quoted section, so we
+      -- don't recurse on goX, it's done.
+      goX ('"' List.: xs) = xs
+      -- Not done, but not a special character
+      -- just continue the fold.
+      goX (x List.: xs) = x List.: goX xs
+      goX List.Nil = List.Nil

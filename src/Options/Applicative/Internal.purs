@@ -69,6 +69,7 @@ instance pFunctor :: Functor P where
 
 instance pApply :: Apply P where
   apply (P f) (P a) = P $ f <*> a
+
 instance pApplicative :: Applicative P where
   pure a = P $ pure a
 
@@ -82,8 +83,10 @@ instance pMonad :: Monad P
 
 contextNames :: Array Context -> Array String
 contextNames ns =
-  let go (Context n _) = n
-  in  Array.reverse $ go <$> ns
+  let
+    go (Context n _) = n
+  in
+    Array.reverse $ go <$> ns
 
 instance pMonadP :: MonadP P where
   enterContext name pinfo = P $ lift $ modify_ $ Array.(:) $ Context name (mkExists pinfo)
@@ -113,8 +116,8 @@ runReadM (ReadM r) s = hoistEither <<< runExcept $ runReaderT r s
 withReadM :: forall a. (String -> String) -> ReadM a -> ReadM a
 withReadM f = ReadM <<< mapReaderT (withExcept f') <<< un ReadM
   where
-    f' (ErrorMsg err) = ErrorMsg (f err)
-    f' e = e
+  f' (ErrorMsg err) = ErrorMsg (f err)
+  f' e = e
 
 data ComplResult a
   = ComplParser SomeParser ArgPolicy
@@ -146,6 +149,7 @@ instance completionFunctor :: Functor Completion where
 
 instance completionApply :: Apply Completion where
   apply (Completion f) (Completion a) = Completion $ f <*> a
+
 instance completionApplicative :: Applicative Completion where
   pure a = Completion $ pure a
 
@@ -194,7 +198,7 @@ takeListT :: forall m a. Monad m => Int -> ListT m a -> ListT m a
 takeListT 0 = const empty
 takeListT n = ListT <<< liftM1 (bimapTStep identity (takeListT (n - 1))) <<< stepListT
 
-runListT ::forall a m. Monad m => ListT m a -> m (List a)
+runListT :: forall a m. Monad m => ListT m a -> m (List a)
 runListT xs = do
   s <- stepListT xs
   case s of
@@ -203,8 +207,8 @@ runListT xs = do
 
 instance listTFunctor :: Monad m => Functor (ListT m) where
   map f v = ListT
-         $ liftM1 (bimapTStep f (map f))
-         $ stepListT v
+    $ liftM1 (bimapTStep f (map f))
+    $ stepListT v
 
 instance listTApply :: Monad m => Apply (ListT m) where
   apply = ap
@@ -227,8 +231,10 @@ instance listTAlt :: Monad m => Alt (ListT m) where
     case s of
       TNil -> stepListT ys
       TCons x xt -> pure $ TCons x (xt `alt` ys)
+
 instance listTPlus :: Monad m => Plus (ListT m) where
   empty = ListT (pure TNil)
+
 instance listTAlternative :: Monad m => Alternative (ListT m)
 
 instance listTMonadTrans :: MonadTrans ListT where
@@ -241,7 +247,7 @@ instance listTMonadPlus :: Monad m => MonadPlus (ListT m)
 
 newtype NondetT m a = NondetT (ListT (StateT Boolean m) a)
 
-runNondetT :: forall m a. NondetT m a ->ListT (StateT Boolean m) a
+runNondetT :: forall m a. NondetT m a -> ListT (StateT Boolean m) a
 runNondetT (NondetT m) = m
 
 instance nondetTFunctor :: Monad m => Functor (NondetT m) where
@@ -249,11 +255,13 @@ instance nondetTFunctor :: Monad m => Functor (NondetT m) where
 
 instance nondetTApply :: Monad m => Apply (NondetT m) where
   apply (NondetT m1) (NondetT m2) = NondetT (m1 <*> m2)
+
 instance nondetTApplicative :: Monad m => Applicative (NondetT m) where
   pure = NondetT <<< pure
 
 instance nondetTBind :: Monad m => Bind (NondetT m) where
   bind (NondetT m1) f = NondetT $ m1 >>= runNondetT <<< f
+
 instance nondetTMonad :: Monad m => Monad (NondetT m)
 
 -- | instance nondetTMonadZero :: Monad m => MonadZero (NondetT m)
@@ -271,6 +279,7 @@ instance nondetTMonadTrans :: MonadTrans NondetT where
   lift = NondetT <<< lift <<< lift
 
 infixl 99 nondetTAltOp as <!>
+
 nondetTAltOp :: forall a m. Monad m => NondetT m a -> NondetT m a -> NondetT m a
 nondetTAltOp m1 m2 = NondetT <<< alt (runNondetT m1) $ do
   s <- lift get
@@ -282,10 +291,11 @@ cut = NondetT $ lift (put true)
 
 disamb :: forall m a. Monad m => Boolean -> NondetT m a -> m (Maybe a)
 disamb allow_amb xs = do
-  xs' <- (_ `evalStateT` false)
-       <<< runListT
-       <<< takeListT (if allow_amb then 1 else 2)
-       <<< runNondetT $ xs
+  xs' <-
+    (_ `evalStateT` false)
+      <<< runListT
+      <<< takeListT (if allow_amb then 1 else 2)
+      <<< runNondetT $ xs
   pure $ case xs' of
     List.Cons x List.Nil -> Just x
-    _   -> Nothing
+    _ -> Nothing

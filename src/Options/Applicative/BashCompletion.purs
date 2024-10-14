@@ -36,146 +36,155 @@ data Richness
   = Standard
   -- ^ Add no help descriptions to the completions
   | Enriched Int Int
-  -- ^ Include tab separated description for options
-  --   and commands when available.
-  --   Takes option description length and command
-  --   description length.
+
+-- ^ Include tab separated description for options
+--   and commands when available.
+--   Takes option description length and command
+--   description length.
 
 derive instance richnessEq :: Eq Richness
 derive instance richnessOrd :: Ord Richness
 derive instance richnessGeneric :: Generic Richness _
-instance richnessShow :: Show Richness where show = genericShow
+instance richnessShow :: Show Richness where
+  show = genericShow
 
 bashCompletionParser :: forall a. ParserInfo a -> ParserPrefs -> Parser CompletionResult
 bashCompletionParser pinfo pprefs = complParser
   where
-    failure opts = CompletionResult
-      { execCompletion: \progn -> unLines <$> opts progn }
+  failure opts = CompletionResult
+    { execCompletion: \progn -> unLines <$> opts progn }
 
-    complParser =
-      ( failure <$>
-        (  bashCompletionQuery pinfo pprefs
-        -- To get rich completions, one just needs the first
-        -- command. To customise the lengths, use either of
-        -- the `desc-length` options.
-        -- zsh commands can go on a single line, so they might
-        -- want to be longer.
-        <$> ( flag' Enriched (long "bash-completion-enriched" `append` internal)
-                <*> option int (long "bash-completion-option-desc-length" `append` internal `append` value 40)
-                <*> option int (long "bash-completion-command-desc-length" `append` internal `append` value 40)
-          <|> pure Standard
-          )
-        <*> (map Array.fromFoldable <<< many <<< strOption) (long "bash-completion-word"
-                                  `append` internal)
-        <*> option int (long "bash-completion-index" `append` internal) )
-      ) <|> failure <$>
-          (bashCompletionScript <$>
-            strOption (long "bash-completion-script" `append` internal))
-        <|> failure <$>
-          (fishCompletionScript <$>
-            strOption (long "fish-completion-script" `append` internal))
-        <|> failure <$>
-          (zshCompletionScript <$>
-            strOption (long "zsh-completion-script" `append` internal))
-
+  complParser =
+    ( failure <$>
+        ( bashCompletionQuery pinfo pprefs
+            -- To get rich completions, one just needs the first
+            -- command. To customise the lengths, use either of
+            -- the `desc-length` options.
+            -- zsh commands can go on a single line, so they might
+            -- want to be longer.
+            <$>
+              ( flag' Enriched (long "bash-completion-enriched" `append` internal)
+                  <*> option int (long "bash-completion-option-desc-length" `append` internal `append` value 40)
+                  <*> option int (long "bash-completion-command-desc-length" `append` internal `append` value 40)
+                  <|> pure Standard
+              )
+            <*> (map Array.fromFoldable <<< many <<< strOption)
+              ( long "bash-completion-word"
+                  `append` internal
+              )
+            <*> option int (long "bash-completion-index" `append` internal)
+        )
+    )
+      <|> failure <$>
+        ( bashCompletionScript <$>
+            strOption (long "bash-completion-script" `append` internal)
+        )
+      <|> failure <$>
+        ( fishCompletionScript <$>
+            strOption (long "fish-completion-script" `append` internal)
+        )
+      <|> failure <$>
+        ( zshCompletionScript <$>
+            strOption (long "zsh-completion-script" `append` internal)
+        )
 
 bashCompletionQuery :: forall a. ParserInfo a -> ParserPrefs -> Richness -> Array String -> Int -> String -> Effect (Array String)
 bashCompletionQuery pinfo pprefs richness ws i _ = case runCompletion compl pprefs of
   Just (Left (Tuple (SomeParser e) a))
-    -> runExists (\p -> list_options a p) e
+  -> runExists (\p -> list_options a p) e
   Just (Right c)
-    -> run_completer c
+  -> run_completer c
   Nothing
-    -> pure []
+  -> pure []
   where
-    { init:ws', rest:ws'' } = arraySplitAt i ws
+  { init: ws', rest: ws'' } = arraySplitAt i ws
 
-    compl = runParserInfo pinfo (List.fromFoldable $ Array.drop 1 ws')
+  compl = runParserInfo pinfo (List.fromFoldable $ Array.drop 1 ws')
 
-    list_options :: forall x. ArgPolicy -> Parser x -> Effect (Array String)
-    list_options a
-      = map fold
-      <<< sequence
-      <<< mapParser (opt_completions a)
+  list_options :: forall x. ArgPolicy -> Parser x -> Effect (Array String)
+  list_options a = map fold
+    <<< sequence
+    <<< mapParser (opt_completions a)
 
-    --
-    -- Prior to 0.14 there was a subtle bug which would
-    -- mean that completions from positional arguments
-    -- further into the parse would be shown.
-    --
-    -- We therefore now check to see that
-    -- hinfoUnreachableArgs is off before running the
-    -- completion for position arguments.
-    --
-    -- For options and flags, ensure that the user
-    -- hasn't disabled them with `--`.
-    opt_completions :: ∀ x. ArgPolicy -> OptHelpInfo -> Option x -> Effect (Array String)
-    opt_completions argPolicy hinfo opt = case (un Option opt).optMain of
-      OptReader ns _ _
-         | argPolicy /= AllPositionals
-        -> pure <<< add_opt_help opt $ show_names ns
-         | otherwise
-        -> pure []
-      FlagReader ns _
-         | argPolicy /= AllPositionals
-        -> pure <<< add_opt_help opt $ show_names ns
-         | otherwise
-        -> pure []
-      ArgReader rdr
-         | (un OptHelpInfo hinfo).hinfoUnreachableArgs
-        -> pure []
-         | otherwise
-        -> run_completer (un CReader rdr).crCompleter
-      CmdReader _ ns p
-         | (un OptHelpInfo hinfo).hinfoUnreachableArgs
-        -> pure []
-         | otherwise
-        -> pure <<< add_cmd_help p $ filter_names ns
+  --
+  -- Prior to 0.14 there was a subtle bug which would
+  -- mean that completions from positional arguments
+  -- further into the parse would be shown.
+  --
+  -- We therefore now check to see that
+  -- hinfoUnreachableArgs is off before running the
+  -- completion for position arguments.
+  --
+  -- For options and flags, ensure that the user
+  -- hasn't disabled them with `--`.
+  opt_completions :: ∀ x. ArgPolicy -> OptHelpInfo -> Option x -> Effect (Array String)
+  opt_completions argPolicy hinfo opt = case (un Option opt).optMain of
+    OptReader ns _ _
+      | argPolicy /= AllPositionals -> pure <<< add_opt_help opt $ show_names ns
+      | otherwise -> pure []
+    FlagReader ns _
+      | argPolicy /= AllPositionals -> pure <<< add_opt_help opt $ show_names ns
+      | otherwise -> pure []
+    ArgReader rdr
+      | (un OptHelpInfo hinfo).hinfoUnreachableArgs -> pure []
+      | otherwise -> run_completer (un CReader rdr).crCompleter
+    CmdReader _ ns p
+      | (un OptHelpInfo hinfo).hinfoUnreachableArgs -> pure []
+      | otherwise -> pure <<< add_cmd_help p $ filter_names ns
 
-    -- When doing enriched completions, add any help specified
-    -- to the completion variables (tab separated).
-    add_opt_help :: forall x f. Functor f => Option x -> f String -> f String
-    add_opt_help opt = case richness of
-      Standard
-        -> identity
-      Enriched len _
-        -> map (\o -> let h = un Chunk $ optHelp opt
-                       in  maybe o (\h' -> o <> "\t" <> render_line len h') h)
+  -- When doing enriched completions, add any help specified
+  -- to the completion variables (tab separated).
+  add_opt_help :: forall x f. Functor f => Option x -> f String -> f String
+  add_opt_help opt = case richness of
+    Standard
+    -> identity
+    Enriched len _
+    -> map
+      ( \o ->
+          let
+            h = un Chunk $ optHelp opt
+          in
+            maybe o (\h' -> o <> "\t" <> render_line len h') h
+      )
 
-    -- When doing enriched completions, add the command description
-    -- to the completion variables (tab separated).
-    add_cmd_help :: forall f x. Functor f => (String -> Maybe (ParserInfo x)) -> f String -> f String
-    add_cmd_help p = case richness of
-      Standard
-        -> identity
-      Enriched _ len
-        -> map (\cmd -> let h = p cmd >>= un Chunk <<< _.infoProgDesc <<< un ParserInfo
-                         in  maybe cmd (\h' -> cmd <> "\t" <> render_line len h') h)
+  -- When doing enriched completions, add the command description
+  -- to the completion variables (tab separated).
+  add_cmd_help :: forall f x. Functor f => (String -> Maybe (ParserInfo x)) -> f String -> f String
+  add_cmd_help p = case richness of
+    Standard
+    -> identity
+    Enriched _ len
+    -> map
+      ( \cmd ->
+          let
+            h = p cmd >>= un Chunk <<< _.infoProgDesc <<< un ParserInfo
+          in
+            maybe cmd (\h' -> cmd <> "\t" <> render_line len h') h
+      )
 
-    show_names :: Array OptName -> Array String
-    show_names = filter_names <<< map showOption
+  show_names :: Array OptName -> Array String
+  show_names = filter_names <<< map showOption
 
-    -- We only want to show a single line in the completion results description.
-    -- If there was a line break, it would come across as a different completion
-    -- possibility.
-    render_line :: Int -> Doc -> String
-    render_line len doc = case map NEA.uncons $ NEA.fromArray $ lines (displayS (renderPretty 1.0 len doc)) of
-      Nothing -> ""
-      Just {head:x, tail: []} -> x
-      Just {head:x, tail: _} -> x <> "..."
+  -- We only want to show a single line in the completion results description.
+  -- If there was a line break, it would come across as a different completion
+  -- possibility.
+  render_line :: Int -> Doc -> String
+  render_line len doc = case map NEA.uncons $ NEA.fromArray $ lines (displayS (renderPretty 1.0 len doc)) of
+    Nothing -> ""
+    Just { head: x, tail: [] } -> x
+    Just { head: x, tail: _ } -> x <> "..."
 
-    filter_names :: (Array String) -> Array String
-    filter_names = Array.filter is_completion
+  filter_names :: (Array String) -> Array String
+  filter_names = Array.filter is_completion
 
-    run_completer :: Completer -> Effect (Array String)
-    run_completer c = un Completer c (fromMaybe "" (Array.head ws''))
+  run_completer :: Completer -> Effect (Array String)
+  run_completer c = un Completer c (fromMaybe "" (Array.head ws''))
 
-    is_completion :: String -> Boolean
-    is_completion =
-      case Array.head ws'' of
-        Just w -> startsWith $ String.Pattern w
-        Nothing -> const true
-
+  is_completion :: String -> Boolean
+  is_completion =
+    case Array.head ws'' of
+      Just w -> startsWith $ String.Pattern w
+      Nothing -> const true
 
 arraySplitAt
   :: forall a
@@ -204,7 +213,8 @@ bashCompletionScript prog progn = pure
   , "    COMPREPLY=( $(" <> prog <> " \"${CMDLINE[@]}\") )"
   , "}"
   , ""
-  , "complete -o filenames -F _" <> progn <> " " <> progn ]
+  , "complete -o filenames -F _" <> progn <> " " <> progn
+  ]
 
 -- |
 -- | **Note**: Fish Shell
@@ -243,7 +253,7 @@ fishCompletionScript prog progn = pure
   , "    end"
   , "end"
   , ""
-  , "complete --no-files --command " <> progn <> " --arguments '(_"  <> progn <>  ")'"
+  , "complete --no-files --command " <> progn <> " --arguments '(_" <> progn <> ")'"
   ]
 
 zshCompletionScript :: String -> String -> Effect (Array String)

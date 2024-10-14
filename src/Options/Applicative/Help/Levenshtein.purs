@@ -1,4 +1,5 @@
 module Options.Applicative.Help.Levenshtein where
+
 -- (
 --     -- editDistance
 --   ) where
@@ -24,21 +25,20 @@ import Data.NonEmpty (NonEmpty(..))
 import Data.Semigroup.Foldable (minimum)
 import Partial.Unsafe (unsafePartial)
 
-
 editDistance :: forall a. Eq a => Array a -> Array a -> Int
 editDistance xs ys = dist' (Array.length xs) (Array.length ys)
-    where
-    dist' :: Int -> Int -> Int
-    dist' = memoize2 $ \a b -> dist a b
+  where
+  dist' :: Int -> Int -> Int
+  dist' = memoize2 $ \a b -> dist a b
 
-    dist 0 j = j
-    dist i 0 = i
-    dist i j = minimum $
-      (dist' (i-1) j + 1) `NonEmpty`
-      [ dist' i (j-1) + 1
-      , unsafePartial $ if xs `unsafeIndex` (i - 1) == ys `unsafeIndex` (j - 1)
-          then dist' (i-1) (j-1)
-          else 1 + dist' (i-1) (j-1)
+  dist 0 j = j
+  dist i 0 = i
+  dist i j = minimum $
+    (dist' (i - 1) j + 1) `NonEmpty`
+      [ dist' i (j - 1) + 1
+      , unsafePartial $
+          if xs `unsafeIndex` (i - 1) == ys `unsafeIndex` (j - 1) then dist' (i - 1) (j - 1)
+          else 1 + dist' (i - 1) (j - 1)
       ]
 
 -- NOTE(safareli): this uses too much laziness for me, so instead I ported the easier version from https://wiki.haskell.org/Edit_distance

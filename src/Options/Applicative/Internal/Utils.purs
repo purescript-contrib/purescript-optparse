@@ -40,7 +40,6 @@ whitespaceRegex = case Regex.regex "\\s+" noFlags of
   Left err -> unsafeCrashWith $ "whitespaceRegex: `\\s+` seems to be invlaid, err: " <> err
   Right r -> r
 
-
 startsWith :: String.Pattern -> String -> Boolean
 startsWith p s = String.indexOf p s == Just 0
 

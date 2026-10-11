@@ -1,9 +1,7 @@
 package:
   dependencies:
-      - aff: ">=7.1.0 <8.0.0"
       - arrays: ">=7.2.1 <8.0.0"
       - bifunctors: ">=6.0.0 <7.0.0"
-      - console: ">=6.1.0 <7.0.0"
       - control: ">=6.0.0 <7.0.0"
       - effect: ">=4.0.0 <5.0.0"
       - either: ">=6.1.0 <7.0.0"
@@ -12,7 +10,6 @@ package:
       - exitcodes: ">=4.0.0 <5.0.0"
       - foldable-traversable: ">=6.0.0 <7.0.0"
       - free: ">=7.1.0 <8.0.0"
-      - gen: ">=4.0.0 <5.0.0"
       - integers: ">=6.0.0 <7.0.0"
       - lazy: ">=6.0.0 <7.0.0"
       - lists: ">=7.0.0 <8.0.0"
@@ -32,15 +29,15 @@ package:
       - tuples: ">=7.0.0 <8.0.0"
   name: optparse
   publish:
-    version: 5.0.1
+    version: 5.0.2
     license: BSD-3-Clause
     location:
       githubOwner: "purescript-contrib"
       githubRepo: purescript-optparse
   test:
-    dependencies: [ "quickcheck", "spec" ]
+    dependencies: [ "aff", "console", "gen", "quickcheck", "spec" ]
     main: Test.Main
 workspace:
-  extra_packages: {}
-  package_set:
+  extraPackages: {}
+  packageSet:
     registry: 43.3.0

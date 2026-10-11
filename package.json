@@ -6,7 +6,6 @@
     "test": "spago test"
   },
   "devDependencies": {
-    "purescript": "^0.15.0",
-    "spago": "^0.93.0"
+    "purescript": "^0.15.0"
   }
 }
